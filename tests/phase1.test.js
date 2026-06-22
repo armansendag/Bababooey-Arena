@@ -1,0 +1,134 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { createApp } = require("../src/app");
+
+function register(app, email, displayName) {
+  return app.services.auth.register({
+    email,
+    password: "correct-horse-battery",
+    displayName
+  });
+}
+
+function grantLegalLoadoutCollection(app, playerId) {
+  const quantities = {
+    troop_mana_goblin: 3,
+    troop_mana_slime: 3,
+    troop_mana_golem: 2,
+    troop_mana_dragon: 1,
+    troop_enchantment_eater: 3,
+    troop_arcane_hunter: 2,
+    troop_demolition_bot: 2,
+    spell_disenchant: 2,
+    enchant_mana_spring: 2
+  };
+
+  for (const [cardId, quantity] of Object.entries(quantities)) {
+    for (let i = 0; i < quantity; i += 1) {
+      app.services.collection.grantCard(cardId, playerId, "test_seed");
+    }
+  }
+
+  return quantities;
+}
+
+test("register creates a profile with starting coins and a friend code", () => {
+  const app = createApp();
+  const result = register(app, "a@example.com", "Arman");
+
+  assert.equal(result.profile.coins, 1000);
+  assert.match(result.profile.friendCode, /^BBY-[A-F0-9]{6}$/);
+  assert.ok(result.token);
+});
+
+test("friend requests are created and accepted by friend code", () => {
+  const app = createApp();
+  const playerA = register(app, "a@example.com", "Alpha");
+  const playerB = register(app, "b@example.com", "Bravo");
+
+  const request = app.services.friends.sendRequest(playerA.user.id, playerB.profile.friendCode);
+  assert.equal(request.status, "pending");
+
+  const accepted = app.services.friends.respond(playerB.user.id, request.id, true);
+  assert.equal(accepted.status, "accepted");
+
+  const friends = app.services.friends.list(playerA.user.id);
+  assert.equal(friends.length, 1);
+  assert.equal(friends[0].addressee.displayName, "Bravo");
+});
+
+test("loadout builder enforces the approved phase 1 roster rules", () => {
+  const app = createApp();
+  const player = register(app, "loadout@example.com", "Builder");
+  const cards = grantLegalLoadoutCollection(app, player.user.id);
+
+  const valid = app.services.loadouts.validate(player.user.id, {
+    name: "Mana Curve",
+    coreCardId: "core_starter",
+    cards
+  });
+
+  assert.equal(valid.valid, true);
+  assert.equal(valid.summary.total, 20);
+  assert.equal(valid.summary.troops, 16);
+  assert.equal(valid.summary.spells, 2);
+  assert.equal(valid.summary.enchantments, 2);
+
+  const loadout = app.services.loadouts.create(player.user.id, {
+    name: "Mana Curve",
+    coreCardId: "core_starter",
+    cards
+  });
+  assert.equal(loadout.name, "Mana Curve");
+});
+
+test("invalid loadouts report copy limit and composition failures", () => {
+  const app = createApp();
+  const player = register(app, "invalid@example.com", "Invalid");
+  grantLegalLoadoutCollection(app, player.user.id);
+
+  const result = app.services.loadouts.validate(player.user.id, {
+    coreCardId: "core_starter",
+    cards: {
+      troop_mana_dragon: 2,
+      spell_disenchant: 4
+    }
+  });
+
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => error.includes("unique copy limit")));
+  assert.ok(result.errors.some((error) => error.includes("exactly 20")));
+  assert.ok(result.errors.some((error) => error.includes("14-16 troops")));
+  assert.ok(result.errors.some((error) => error.includes("up to 3 spells")));
+});
+
+test("pack opening charges coins, grants cards, converts copies beyond ten, and advances quests", () => {
+  const app = createApp({ random: () => 0 });
+  const player = register(app, "pack@example.com", "Packer");
+  const owned = app.store.playerCards.get(player.user.id);
+  owned.set("troop_mana_goblin", 10);
+
+  const result = app.services.packs.open(player.user.id, "starter_pack");
+
+  assert.equal(result.cards.length, 5);
+  assert.equal(result.opening.duplicateCoins, 25);
+  assert.equal(result.profile.coins, 775);
+
+  const quests = app.services.quests.list(player.user.id);
+  const openPackQuest = quests.find((quest) => quest.id === "weekly_open_packs");
+  assert.equal(openPackQuest.progress, 1);
+});
+
+test("completed quests can be claimed once for coins", () => {
+  const app = createApp();
+  const player = register(app, "quest@example.com", "Quester");
+
+  app.services.quests.recordProgress(player.user.id, "play_game", 1);
+  const claimed = app.services.quests.claim(player.user.id, "daily_play_game");
+
+  assert.equal(claimed.claimedAt !== null, true);
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1075);
+  assert.throws(() => app.services.quests.claim(player.user.id, "daily_play_game"), /already claimed/);
+});

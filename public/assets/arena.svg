@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-label="Battlefield arena">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#1f5d6b"/>
+      <stop offset="0.55" stop-color="#27314a"/>
+      <stop offset="1" stop-color="#171923"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#294b3d"/>
+      <stop offset="0.5" stop-color="#705b35"/>
+      <stop offset="1" stop-color="#3a3d67"/>
+    </linearGradient>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="520" fill="url(#sky)"/>
+  <path d="M0 305 C180 250 295 290 432 262 C584 231 716 226 864 260 C1018 296 1094 264 1200 224 L1200 520 L0 520 Z" fill="url(#field)"/>
+  <path d="M80 358 C306 311 452 328 600 316 C772 302 916 320 1120 356" fill="none" stroke="#d6b86b" stroke-width="5" opacity=".45"/>
+  <path d="M600 255 L637 333 L600 410 L563 333 Z" fill="#d9c27c" opacity=".55"/>
+  <circle cx="600" cy="333" r="78" fill="none" stroke="#e2d7a4" stroke-width="4" opacity=".35"/>
+  <circle cx="210" cy="180" r="110" fill="#87dfc7" opacity=".18" filter="url(#soft)"/>
+  <circle cx="970" cy="120" r="130" fill="#ffb75f" opacity=".14" filter="url(#soft)"/>
+  <g opacity=".45" stroke="#f7e6af" stroke-width="3" fill="none">
+    <path d="M188 378 L262 342 L336 378"/>
+    <path d="M864 378 L938 342 L1012 378"/>
+    <path d="M486 366 L600 306 L714 366"/>
+  </g>
+</svg>

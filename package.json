@@ -1,0 +1,17 @@
+{
+  "name": "bababooey-arena",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Phase 1 backend foundation for Battlefield: Codex.",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}
