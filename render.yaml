@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bababooey-arena
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_FILE
+        value: /tmp/bababooey-arena-store.json

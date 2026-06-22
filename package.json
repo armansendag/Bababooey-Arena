@@ -2,10 +2,11 @@
   "name": "bababooey-arena",
   "version": "0.1.0",
   "private": true,
-  "description": "Phase 1 backend foundation for Battlefield: Codex.",
+  "description": "Bababooey Arena local and online friend-test card battler.",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
+    "smoke:deploy": "node scripts/deploymentSmokeTest.js",
     "test": "node --test"
   },
   "engines": {
