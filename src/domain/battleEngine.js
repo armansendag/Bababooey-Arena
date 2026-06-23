@@ -2,8 +2,9 @@
 
 const { cardsById } = require("../data/cards");
 
-const CORE_HP = 300;
+const CORE_HP = 50;
 const BASE_MANA_CAP = 10;
+const PLAYED_CARD_COOLDOWN = 1;
 
 class BattleRuleError extends Error {
   constructor(message) {
@@ -107,6 +108,15 @@ function cardOf(cardCatalog, cardId) {
 
 function findReadyRosterCard(player, cardId) {
   return player.roster.find((entry) => entry.cardId === cardId && entry.zone === "ready");
+}
+
+function setMatchingReadyCopiesOnCooldown(player, playedEntry, cooldown = PLAYED_CARD_COOLDOWN) {
+  for (const entry of player.roster) {
+    if (entry.rosterId !== playedEntry.rosterId && entry.cardId === playedEntry.cardId && entry.zone === "ready") {
+      entry.zone = "cooldown";
+      entry.cooldownRemaining = cooldown;
+    }
+  }
 }
 
 function findPlayerTroop(state, instanceId) {
@@ -218,6 +228,7 @@ function playTroop(state, playerId, cardId, options = {}) {
   spendMana(player, card.manaCost);
 
   rosterEntry.zone = "battlefield";
+  setMatchingReadyCopiesOnCooldown(player, rosterEntry);
   const troop = {
     instanceId: makeInstanceId(state, "t"),
     rosterId: rosterEntry.rosterId,
@@ -230,7 +241,7 @@ function playTroop(state, playerId, cardId, options = {}) {
     playedTurn: state.turnNumber
   };
   player.troops.push(troop);
-  addEvent(state, "troop_played", player.id, { cardId, instanceId: troop.instanceId, manaSpent: card.manaCost });
+  addEvent(state, "troop_played", player.id, { cardId, instanceId: troop.instanceId, manaSpent: card.manaCost, matchingCopyCooldown: PLAYED_CARD_COOLDOWN });
   return troop;
 }
 
@@ -305,6 +316,7 @@ function attack(state, playerId, attackerInstanceId, target, options = {}) {
 
   if (target.type === "core") {
     assert(target.playerId === opponent.id, "Troops may only attack the enemy core.");
+    assert(opponent.troops.length === 0, "Enemy troops are protecting the core.");
     const damage = attackerCard.attack || 0;
     opponent.coreHp -= damage;
     result = { targetType: "core", targetPlayerId: opponent.id, damage, coreHp: opponent.coreHp };
@@ -351,6 +363,7 @@ function playEnchantment(state, playerId, cardId, options = {}) {
   spendMana(player, card.manaCost);
 
   rosterEntry.zone = "active_enchantment";
+  setMatchingReadyCopiesOnCooldown(player, rosterEntry);
   const enchantment = {
     instanceId: makeInstanceId(state, "e"),
     rosterId: rosterEntry.rosterId,
@@ -359,7 +372,7 @@ function playEnchantment(state, playerId, cardId, options = {}) {
     hp: card.hp
   };
   player.enchantments.push(enchantment);
-  addEvent(state, "enchantment_played", player.id, { cardId, instanceId: enchantment.instanceId, manaSpent: card.manaCost });
+  addEvent(state, "enchantment_played", player.id, { cardId, instanceId: enchantment.instanceId, manaSpent: card.manaCost, matchingCopyCooldown: PLAYED_CARD_COOLDOWN });
   return enchantment;
 }
 
@@ -444,6 +457,7 @@ function applyCommand(state, command, options = {}) {
 module.exports = {
   BASE_MANA_CAP,
   CORE_HP,
+  PLAYED_CARD_COOLDOWN,
   BattleRuleError,
   applyCommand,
   attack,

@@ -156,10 +156,8 @@ function finishWithSitWin(app, match, winner, loser) {
     }
     throw new Error("Winner never became ready to cast Sit.");
   }
-  for (let i = 0; i < 3; i += 1) {
-    readyForSit();
-    command(winner.user.id, { type: "castSpell", cardId: "spell_sit" });
-  }
+  readyForSit();
+  command(winner.user.id, { type: "castSpell", cardId: "spell_sit" });
   assert.equal(current.status, "finished");
   assert.equal(current.winnerId, winner.user.id);
   assert.ok(loser.user.id);
@@ -312,10 +310,8 @@ test("a full online friend match can finish and records history plus rewards", a
     throw new Error("Player 1 never became ready to cast Sit.");
   }
 
-  for (let cast = 0; cast < 3; cast += 1) {
-    await passUntilPlayerOneReadyForSit();
-    await commandAsA({ type: "castSpell", cardId: "spell_sit" });
-  }
+  await passUntilPlayerOneReadyForSit();
+  await commandAsA({ type: "castSpell", cardId: "spell_sit" });
 
   assert.equal(match.status, "finished");
   assert.equal(match.winnerId, playerA.user.id);
@@ -429,10 +425,8 @@ test("rewards are granted only once even after restart snapshot", async (t) => {
     }
     throw new Error("not ready");
   }
-  for (let i = 0; i < 3; i += 1) {
-    await readyForSit();
-    await command(authA, { type: "castSpell", cardId: "spell_sit" });
-  }
+  await readyForSit();
+  await command(authA, { type: "castSpell", cardId: "spell_sit" });
 
   const snapshot = serializeStore(app.store);
   const restartedStore = createMemoryStore({ snapshot });

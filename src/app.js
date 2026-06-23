@@ -68,12 +68,13 @@ function sendStatic(res, filePath) {
   res.end(body);
 }
 
-function createDemoAccount(services, store) {
+function createDemoAccount(services, store, payload = {}) {
   const email = `prototype-${Date.now()}@local.test`;
+  const displayName = String(payload.displayName || "").trim() || `Pilot ${Math.floor(1000 + Math.random() * 9000)}`;
   const account = services.auth.register({
     email,
     password: "prototype-password",
-    displayName: "Prototype Pilot"
+    displayName
   });
 
   for (const card of store.cards.values()) {
@@ -133,7 +134,7 @@ function createApp(options = {}) {
 
       if (path === "/prototype/bootstrap") {
         if (req.method !== "POST") return methodNotAllowed(res);
-        return sendJson(res, 201, createDemoAccount(services, store));
+        return sendJson(res, 201, createDemoAccount(services, store, await readJson(req)));
       }
 
       if (path === "/local-matches") {

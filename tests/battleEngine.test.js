@@ -105,7 +105,7 @@ test("match starts with player 1 at 1 mana and player 2 holding one Coin", () =>
   assert.equal(state.status, "active");
   assert.equal(state.activePlayerId, "p1");
   assert.equal(state.turnNumber, 1);
-  assert.equal(state.players[0].coreHp, 300);
+  assert.equal(state.players[0].coreHp, 50);
   assert.equal(state.players[0].baseMaxMana, 1);
   assert.equal(state.players[0].currentMana, 1);
   assert.equal(state.players[1].baseMaxMana, 0);
@@ -161,7 +161,34 @@ test("troops cannot attack when summoned unless they have Haste", () => {
     { cardCatalog: testCatalog() }
   );
   assert.equal(result.damage, 3);
-  assert.equal(state.players[1].coreHp, 297);
+  assert.equal(state.players[1].coreHp, 47);
+});
+
+test("enemy troops protect the core from troop attacks", () => {
+  const state = match();
+  const attacker = applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_haste_striker" }, { cardCatalog: testCatalog() });
+  endTurn(state, "p1");
+  applyCommand(state, { type: "playTroop", playerId: "p2", cardId: "troop_slow_guard" }, { cardCatalog: testCatalog() });
+  endTurn(state, "p2");
+
+  assert.throws(
+    () => applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: attacker.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: testCatalog() }),
+    /protecting the core/
+  );
+});
+
+test("playing a troop briefly cools matching ready copies", () => {
+  const state = match();
+  applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_slow_guard" }, { cardCatalog: testCatalog() });
+  const p1 = state.players[0];
+  const matchingCopies = p1.roster.filter((entry) => entry.cardId === "troop_slow_guard");
+
+  assert.equal(matchingCopies.filter((entry) => entry.zone === "battlefield").length, 1);
+  assert.equal(matchingCopies.filter((entry) => entry.zone === "cooldown" && entry.cooldownRemaining === 1).length, 2);
+
+  endTurn(state, "p1");
+  endTurn(state, "p2");
+  assert.equal(matchingCopies.filter((entry) => entry.zone === "ready").length, 2);
 });
 
 test("damage formula uses current defense, minimum one damage, and HP persists", () => {
@@ -221,7 +248,7 @@ test("spells are reusable and cooldowns tick down at the owner's turn start", ()
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_emergency_funding" }, { cardCatalog: testCatalog() });
   const p1 = state.players[0];
   assert.equal(p1.spellCooldowns.spell_emergency_funding, 2);
-  assert.equal(p1.coreHp, 275);
+  assert.equal(p1.coreHp, 25);
 
   assert.throws(
     () => applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_emergency_funding" }, { cardCatalog: testCatalog() }),

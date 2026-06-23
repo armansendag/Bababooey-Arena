@@ -10,8 +10,8 @@ const cards = [
     manaCost: 0,
     cooldown: 0,
     copyTag: "unique",
-    hp: 300,
-    perks: ["Core HP 300"]
+    hp: 50,
+    perks: ["Core HP 50"]
   },
   {
     id: "troop_mana_goblin",
@@ -25,7 +25,7 @@ const cards = [
     attack: 2,
     defense: 1,
     hp: 3,
-    perks: ["Gain +1 mana next turn"]
+    perks: ["Future hook: gain +1 mana next turn"]
   },
   {
     id: "troop_mana_slime",
@@ -39,7 +39,7 @@ const cards = [
     attack: 2,
     defense: 2,
     hp: 4,
-    perks: ["Gain mana when destroyed"]
+    perks: ["Future hook: when destroyed, gain +1 mana"]
   },
   {
     id: "troop_mana_golem",
@@ -142,7 +142,7 @@ const cards = [
     manaCost: 0,
     cooldown: 2,
     copyTag: "standard",
-    perks: ["Gain mana and damage your core"]
+    perks: ["Gain +3 temporary mana and deal 25 damage to your Core"]
   },
   {
     id: "spell_disenchant",

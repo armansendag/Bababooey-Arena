@@ -33,6 +33,15 @@ select {
   font: inherit;
 }
 
+input {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #11151c;
+  color: var(--text);
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
 button {
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -184,6 +193,49 @@ button:disabled {
   line-height: 1.5;
 }
 
+.name-gate {
+  min-height: 100vh;
+  grid-template-columns: 1fr;
+  place-items: center;
+  padding: 20px;
+  background: linear-gradient(rgba(10, 12, 16, .35), rgba(10, 12, 16, .82)), url("/assets/arena.svg") center/cover;
+}
+
+.name-panel {
+  width: min(520px, 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(20, 23, 29, .92);
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .42);
+}
+
+.name-panel h1,
+.name-panel p {
+  margin: 0;
+}
+
+.name-panel h1 {
+  font-size: 32px;
+}
+
+.name-panel p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.name-form,
+.profile-form {
+  display: grid;
+  gap: 10px;
+}
+
+.name-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -298,6 +350,13 @@ button:disabled {
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
+}
+
+.selected-row.draft-row {
+  width: 100%;
+  grid-template-columns: 1fr auto;
+  text-align: left;
+  background: #202631;
 }
 
 .pack-stage {

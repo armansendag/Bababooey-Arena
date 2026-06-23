@@ -33,6 +33,8 @@
     settingsOpen: false,
     feedback: null,
     message: "",
+    profileDraftName: "",
+    signupName: "",
     settings: {
       sound: false,
       animationSpeed: "normal",
@@ -74,6 +76,20 @@
 
   function opponentPlayer() {
     return state.match?.players.find((player) => player.id !== state.match.activePlayerId);
+  }
+
+  function battlefieldPlayers() {
+    const players = state.match?.players || [];
+    const first = players[0] || null;
+    const second = players[1] || null;
+
+    if (state.battleMode === "online" && state.profile?.userId) {
+      const self = players.find((player) => player.id === state.profile.userId);
+      const opponent = players.find((player) => player.id !== state.profile.userId);
+      if (self && opponent) return { top: opponent, bottom: self };
+    }
+
+    return { top: second || first, bottom: first || second };
   }
 
   function authHeaders() {
@@ -175,6 +191,10 @@
   function setMessage(message) {
     state.message = message;
     render();
+  }
+
+  function normalizeDisplayName(value) {
+    return String(value || "").trim().slice(0, 24);
   }
 
   function playerName(playerId) {
@@ -362,7 +382,7 @@
         <div><strong>Troops</strong><p>Troops need a full turn before attacking unless they have Haste. Select your troop, then a highlighted target.</p></div>
         <div><strong>Spells</strong><p>Spells are reusable. Some resolve instantly, while targeted spells ask for a valid target.</p></div>
         <div><strong>Enchantments</strong><p>You can keep up to 3 active enchantments. Enchantments have HP and can be attacked.</p></div>
-        <div><strong>Core HP</strong><p>Each Core starts at 300 HP. Reduce the enemy Core to 0 to win.</p></div>
+        <div><strong>Core HP</strong><p>Each Core starts at 50 HP. Enemy troops protect the Core until they are cleared.</p></div>
         <div><strong>End Turn</strong><p>Use End Turn when you are finished spending mana and attacking.</p></div>
       </div>
     `;
@@ -435,26 +455,23 @@
       <div class="small">${escapeHtml((cardData.perks || []).join(" | "))}</div>
       <div class="stats">${stats.join("")}</div>
     `;
-    node.addEventListener("mouseenter", () => {
-      state.detailCard = cardData;
-      renderDetailOnly();
-    });
-    node.addEventListener("mouseleave", () => {
-      if (state.detailCard?.id === cardData.id) {
-        state.detailCard = null;
-        renderDetailOnly();
-      }
-    });
-    node.addEventListener("dblclick", () => {
-      state.detailCard = cardData;
-      render();
-    });
+    if (!options.onClick) {
+      node.addEventListener("click", () => {
+        state.detailCard = cardData;
+        render();
+      });
+    }
     if (options.actions) {
       const actions = el("div", "card-actions");
       options.actions.forEach((action) => actions.appendChild(action));
       node.appendChild(actions);
     }
-    if (options.onClick) node.addEventListener("click", options.onClick);
+    if (options.onClick) {
+      node.addEventListener("click", (event) => {
+        state.detailCard = null;
+        options.onClick(event);
+      });
+    }
     return node;
   }
 
@@ -466,11 +483,88 @@
       <p>Build a 20-card roster, open packs, complete quests, and play a full local two-player match through the deterministic Phase 2 rules engine.</p>
     `));
     const stats = el("div", "grid three");
-    stats.appendChild(el("section", "section", `<h2>Profile</h2><div class="pill-row"><span class="pill">${escapeHtml(state.profile?.displayName || "Demo")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`));
+    const profileSection = el("section", "section");
+    profileSection.innerHTML = `<h2>Profile</h2><div class="pill-row"><span class="pill">${escapeHtml(state.profile?.displayName || "Player")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`;
+    const profileForm = el("form", "profile-form");
+    profileForm.innerHTML = `
+      <label class="setting-row"><span>Display name</span><input name="displayName" maxlength="24" minlength="2" value="${escapeHtml(state.profileDraftName || state.profile?.displayName || "")}"></label>
+      <div class="toolbar"><button type="submit">Save Name</button></div>
+    `;
+    profileForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = profileForm.querySelector("input[name='displayName']");
+      updateDisplayName(input.value);
+    });
+    profileSection.appendChild(profileForm);
+    stats.appendChild(profileSection);
     stats.appendChild(el("section", "section", `<h2>Collection</h2><div class="pill-row"><span class="pill">${state.collection.filter((item) => item.ownedCount > 0).length} owned cards</span><span class="pill">${state.cards.length} catalog cards</span></div>`));
     stats.appendChild(el("section", "section", `<h2>Battle</h2><div class="pill-row"><span class="pill">${state.match ? "Match ready" : "No match"}</span><span class="pill">${state.match?.status || "idle"}</span></div>`));
     page.appendChild(stats);
     shell(page);
+  }
+
+  function renderNameGate() {
+    app.innerHTML = "";
+    const wrapper = el("div", `app name-gate ${motionClass()}`);
+    const panel = el("section", "name-panel");
+    panel.innerHTML = `
+      <div class="brand-title">Bababooey Arena</div>
+      <h1>Choose Your Arena Name</h1>
+      <p>This is the name friends will see on challenges, queues, leaderboards, and your Core in online matches.</p>
+      <form class="name-form">
+        <input name="displayName" maxlength="24" minlength="2" placeholder="Enter display name" value="${escapeHtml(state.signupName)}" autofocus>
+        <button type="submit">Enter Arena</button>
+      </form>
+      <div class="small">2-24 characters. You can change it later from Home.</div>
+      ${state.message ? `<div class="feedback-banner">${escapeHtml(state.message)}</div>` : ""}
+    `;
+    panel.querySelector("form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = panel.querySelector("input[name='displayName']");
+      createPrototypeAccount(input.value);
+    });
+    wrapper.appendChild(panel);
+    app.appendChild(wrapper);
+  }
+
+  async function createPrototypeAccount(displayName) {
+    const nextName = normalizeDisplayName(displayName);
+    if (nextName.length < 2) {
+      state.signupName = nextName;
+      state.message = "Display name must be at least 2 characters.";
+      renderNameGate();
+      return;
+    }
+    state.signupName = nextName;
+    try {
+      const account = await api("/prototype/bootstrap", { method: "POST", body: { displayName: nextName } });
+      state.token = account.token;
+      localStorage.setItem("bababooey_token", account.token);
+      state.message = "";
+      await refreshAccountData();
+      connectOnlineSocket();
+      await startMatch({ navigate: false });
+      state.view = "home";
+      autoFillLoadout();
+      render();
+    } catch (error) {
+      state.message = error.message;
+      renderNameGate();
+    }
+  }
+
+  function updateDisplayName(displayName) {
+    const nextName = normalizeDisplayName(displayName);
+    if (nextName.length < 2) return setMessage("Display name must be at least 2 characters.");
+    api("/me", { method: "PATCH", body: { displayName: nextName } })
+      .then((profile) => {
+        state.profile = profile;
+        state.profileDraftName = profile.displayName;
+        state.message = "Display name updated.";
+        return refreshOnlineData();
+      })
+      .then(render)
+      .catch((error) => setMessage(error.message));
   }
 
   function renderCollection() {
@@ -563,7 +657,13 @@
     const list = el("div", "selected-list");
     Object.entries(state.loadoutDraft).forEach(([cardId, quantity]) => {
       const item = card(cardId);
-      list.appendChild(el("div", "selected-row", `<strong>${escapeHtml(item?.name || cardId)}</strong><span class="pill">${quantity}</span><span class="small">${escapeHtml(item?.type || "")}</span>`));
+      const row = el("button", "selected-row draft-row", `<strong>${escapeHtml(item?.name || cardId)}</strong><span class="pill">x${quantity}</span>`);
+      row.type = "button";
+      row.addEventListener("click", () => {
+        state.detailCard = item;
+        render();
+      });
+      list.appendChild(row);
     });
     if (Object.keys(state.loadoutDraft).length === 0) list.appendChild(el("div", "empty", "No cards selected."));
     selected.appendChild(list);
@@ -910,8 +1010,8 @@
     const zone = el("div", "player-zone");
     const coreHit = state.feedback?.target?.type === "core" && state.feedback.target.playerId === player.id;
     const core = el("div", `core ${active ? "active" : ""} ${coreHit ? "damage core-hit" : ""}`);
-    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, player.coreHp / 3)}%"></span></div><div>${player.coreHp} / 300 HP</div><div class="small">Mana ${player.currentMana}/${player.baseMaxMana}${player.temporaryMana ? ` +${player.temporaryMana}` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
-    if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker") {
+    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, (player.coreHp / 50) * 100)}%"></span></div><div>${player.coreHp} / 50 HP</div><div class="small">Mana ${player.currentMana}/${player.baseMaxMana}${player.temporaryMana ? ` +${player.temporaryMana}` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
+    if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker" && player.troops.length === 0) {
       core.classList.add("targetable");
       core.setAttribute("title", "Valid core target");
       core.addEventListener("click", () => sendBattleCommand({
@@ -959,12 +1059,12 @@
     section.innerHTML = `
       <div class="versus-title">
         <h2>Local Match Ready</h2>
-        <p>Two players. Two 300 HP Cores. One deterministic rules engine.</p>
+        <p>Two players. Two 50 HP Cores. Clear enemy troops before striking the Core.</p>
       </div>
       <div class="versus-grid">
-        <div class="versus-player"><h3>Player 1</h3><div class="core-orb">300</div><div class="pill-row"><span class="pill">Starts first</span><span class="pill">${p1.roster.length} cards</span></div></div>
+        <div class="versus-player"><h3>Player 1</h3><div class="core-orb">50</div><div class="pill-row"><span class="pill">Starts first</span><span class="pill">${p1.roster.length} cards</span></div></div>
         <div class="versus-mark">VS</div>
-        <div class="versus-player"><h3>Player 2</h3><div class="core-orb">300</div><div class="pill-row"><span class="pill">Coin spell</span><span class="pill">${p2.roster.length} cards</span></div></div>
+        <div class="versus-player"><h3>Player 2</h3><div class="core-orb">50</div><div class="pill-row"><span class="pill">Coin spell</span><span class="pill">${p2.roster.length} cards</span></div></div>
       </div>
     `;
     const previews = el("div", "grid two");
@@ -1048,13 +1148,13 @@
       return;
     }
     const active = activePlayer();
-    const enemy = opponentPlayer();
+    const fixedSides = battlefieldPlayers();
     const summary = el("section", `section battle-summary ${state.match.status === "finished" ? "winner" : ""}`, `<div class="pill-row"><span class="pill">${state.battleMode === "online" ? `Online ${escapeHtml(state.onlineMatch?.mode || "friend")} match` : "Local battle"}</span><span class="pill">Connection ${escapeHtml(state.battleMode === "online" ? state.connectionStatus : "local")}</span>${state.opponentDisconnected ? `<span class="pill">Opponent disconnected</span>` : ""}<span class="pill">Turn ${state.match.turnNumber}</span><span class="pill">Active ${playerName(active.id)}</span><span class="pill">Mana ${active.currentMana}/${active.baseMaxMana}</span><span class="pill">${state.match.status}</span>${state.match.winnerId ? `<span class="pill">Winner ${playerName(state.match.winnerId)}</span>` : ""}</div>${state.connectionStatus === "reconnecting" && state.battleMode === "online" ? `<div class="feedback-banner">Reconnecting to online match...</div>` : ""}${state.feedback ? `<div class="feedback-banner">${escapeHtml(state.feedback.text)}</div>` : ""}`);
     page.appendChild(summary);
     const arena = el("section", "arena");
-    arena.appendChild(playerZone(enemy, true));
+    arena.appendChild(playerZone(fixedSides.top, true));
     arena.appendChild(el("div", `targeting-guide ${state.selected ? "active" : ""}`, state.selected ? selectedText() : "Select a ready troop to attack, or play a card from the roster."));
-    arena.appendChild(playerZone(active, false));
+    arena.appendChild(playerZone(fixedSides.bottom, false));
     page.appendChild(arena);
 
     const controls = el("div", "controls");
@@ -1080,7 +1180,7 @@
   }
 
   function selectedText() {
-    if (state.selected.kind === "attacker") return "Choose an enemy troop, enchantment, or core.";
+    if (state.selected.kind === "attacker") return "Choose an enemy troop or enchantment. The Core is targetable once enemy troops are gone.";
     if (state.selected.kind === "spell" && state.selected.cardId === "spell_disenchant") return "Disenchant selected: choose a glowing enemy enchantment.";
     if (state.selected.kind === "spell") return "Spell selected: choose a highlighted valid target.";
     return "";
@@ -1177,10 +1277,8 @@
         }
       }
       if (!state.token) {
-        const account = await api("/prototype/bootstrap", { method: "POST" });
-        state.token = account.token;
-        localStorage.setItem("bababooey_token", account.token);
-        await refreshAccountData();
+        renderNameGate();
+        return;
       }
       connectOnlineSocket();
       const savedMatchId = localStorage.getItem("bababooey_online_match_id");
