@@ -15,6 +15,10 @@ const { createPackService } = require("./services/packService");
 const { createProfileService } = require("./services/profileService");
 const { createQuestService } = require("./services/questService");
 
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
 function readJson(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -68,13 +72,12 @@ function sendStatic(res, filePath) {
   res.end(body);
 }
 
-function createDemoAccount(services, store, payload = {}) {
+function createDemoAccount(services, store) {
   const email = `prototype-${Date.now()}@local.test`;
-  const displayName = String(payload.displayName || "").trim() || `Pilot ${Math.floor(1000 + Math.random() * 9000)}`;
   const account = services.auth.register({
     email,
     password: "prototype-password",
-    displayName
+    displayName: "Prototype Pilot"
   });
 
   for (const card of store.cards.values()) {
@@ -89,6 +92,85 @@ function createDemoAccount(services, store, payload = {}) {
   services.loadouts.setActive(account.user.id, loadout.id);
 
   return account;
+}
+
+function logServerError(store, req, error, userId = null) {
+  if (typeof store.logError !== "function") return;
+  const status = error.status || 500;
+  store.logError({
+    level: status >= 500 ? "error" : "warn",
+    scope: "http",
+    message: error.message || "Internal server error.",
+    status,
+    userId,
+    details: error.details || null,
+    metadata: {
+      method: req.method,
+      path: new URL(req.url, "http://localhost").pathname
+    }
+  });
+}
+
+function adminDebugSnapshot(store) {
+  return {
+    users: Array.from(store.users.values()).map((user) => {
+      const profile = store.profiles.get(user.id);
+      const loadouts = Array.from(store.loadouts.values()).filter((loadout) => loadout.playerId === user.id);
+      return {
+        id: user.id,
+        email: user.email,
+        displayName: profile?.displayName || user.id,
+        friendCode: profile?.friendCode || null,
+        coins: profile?.coins || 0,
+        activeLoadoutId: loadouts.find((loadout) => loadout.isActive)?.id || null,
+        loadoutCount: loadouts.length,
+        ownedCards: store.playerCards.get(user.id)?.size || 0,
+        createdAt: user.createdAt
+      };
+    }),
+    queues: clone(store.matchmakingQueues || { casual: [], ranked: [] }),
+    matches: Array.from(store.onlineMatches.values()).map((match) => ({
+      id: match.id,
+      mode: match.mode,
+      status: match.status,
+      winnerId: match.winnerId,
+      playerIds: match.playerIds,
+      turnNumber: match.state?.turnNumber,
+      activePlayerId: match.state?.activePlayerId,
+      eventCount: match.state?.eventLog?.length || 0,
+      connectedPlayerIds: Array.from(match.connectedPlayerIds || []),
+      createdAt: match.createdAt,
+      endedAt: match.endedAt
+    })),
+    challenges: Array.from(store.friendChallenges.values()),
+    errors: (store.errorLogs || []).slice(-50).reverse(),
+    bugReports: (store.bugReports || []).slice(-50).reverse()
+  };
+}
+
+function isDebugPersistenceEnabled() {
+  return process.env.NODE_ENV !== "production" || process.env.ENABLE_ADMIN_DEBUG === "true";
+}
+
+function persistenceDebugSnapshot(store) {
+  return {
+    storeType: store.persistence?.type || "memory",
+    databaseConnected: Boolean(store.persistence?.connected),
+    databaseName: store.persistence?.databaseName || null,
+    migrationStatus: store.persistence?.migrationStatus || null,
+    counts: {
+      users: store.users.size,
+      collections: store.playerCards.size,
+      ownedCardStacks: Array.from(store.playerCards.values()).reduce((sum, owned) => sum + owned.size, 0),
+      loadouts: store.loadouts.size,
+      friends: store.friendships.size,
+      packOpenings: store.packOpenings.length,
+      matches: store.onlineMatches.size,
+      matchHistory: store.matchHistory.length,
+      rankedRatings: store.rankedRatings.size,
+      coinTransactions: store.coinTransactions.length
+    }
+  };
 }
 
 function createApp(options = {}) {
@@ -114,6 +196,7 @@ function createApp(options = {}) {
   }
 
   async function handle(req, res) {
+    let authenticatedUserId = null;
     try {
       const url = new URL(req.url, "http://localhost");
       const path = url.pathname;
@@ -134,7 +217,7 @@ function createApp(options = {}) {
 
       if (path === "/prototype/bootstrap") {
         if (req.method !== "POST") return methodNotAllowed(res);
-        return sendJson(res, 201, createDemoAccount(services, store, await readJson(req)));
+        return sendJson(res, 201, createDemoAccount(services, store));
       }
 
       if (path === "/local-matches") {
@@ -171,6 +254,7 @@ function createApp(options = {}) {
       }
 
       const user = await requireUser(req);
+      authenticatedUserId = user.id;
 
       if (path === "/me") {
         if (req.method === "GET") return sendJson(res, 200, services.profiles.get(user.id));
@@ -247,6 +331,33 @@ function createApp(options = {}) {
         return sendJson(res, 200, services.onlineMatches.leaderboards());
       }
 
+      if (path === "/debug/persistence") {
+        if (req.method !== "GET") return methodNotAllowed(res);
+        if (!isDebugPersistenceEnabled()) {
+          const error = new Error("Persistence debug is disabled in production.");
+          error.status = 403;
+          throw error;
+        }
+        return sendJson(res, 200, persistenceDebugSnapshot(store));
+      }
+
+      if (path === "/admin/debug") {
+        if (req.method !== "GET") return methodNotAllowed(res);
+        return sendJson(res, 200, adminDebugSnapshot(store));
+      }
+
+      if (path === "/admin/reset-dev-account") {
+        if (req.method !== "POST") return methodNotAllowed(res);
+        const body = await readJson(req);
+        const targetUserId = body.userId || user.id;
+        store.resetDevAccount(targetUserId);
+        return sendJson(res, 200, {
+          profile: services.profiles.get(targetUserId),
+          collection: services.collection.list(targetUserId),
+          loadouts: services.loadouts.list(targetUserId)
+        });
+      }
+
       const onlineMatchGet = path.match(/^\/online-matches\/([^/]+)$/);
       if (onlineMatchGet) {
         if (req.method !== "GET") return methodNotAllowed(res);
@@ -261,6 +372,29 @@ function createApp(options = {}) {
 
       if (path === "/match-history" && req.method === "GET") {
         return sendJson(res, 200, services.onlineMatches.history(user.id));
+      }
+
+      if (path === "/match-bug-reports") {
+        if (req.method !== "POST") return methodNotAllowed(res);
+        const body = await readJson(req);
+        const match = body.matchId ? store.onlineMatches.get(body.matchId) : null;
+        if (body.matchId && match && !match.playerIds.includes(user.id)) {
+          const error = new Error("You can only report matches you played in.");
+          error.status = 403;
+          throw error;
+        }
+        return sendJson(res, 201, store.addBugReport({
+          reporterId: user.id,
+          matchId: body.matchId || null,
+          message: body.message,
+          stateSummary: match ? {
+            status: match.status,
+            mode: match.mode,
+            turnNumber: match.state?.turnNumber,
+            activePlayerId: match.state?.activePlayerId,
+            eventCount: match.state?.eventLog?.length || 0
+          } : null
+        }));
       }
 
       const friendAcceptMatch = path.match(/^\/friends\/([^/]+)\/accept$/);
@@ -327,6 +461,7 @@ function createApp(options = {}) {
 
       return sendJson(res, 404, { error: "Not found." });
     } catch (error) {
+      logServerError(store, req, error, authenticatedUserId);
       const status = error.status || 500;
       return sendJson(res, status, {
         error: error.message || "Internal server error.",
@@ -338,4 +473,4 @@ function createApp(options = {}) {
   return { handle, store, services };
 }
 
-module.exports = { createApp, readJson, sendJson };
+module.exports = { createApp, persistenceDebugSnapshot, readJson, sendJson };

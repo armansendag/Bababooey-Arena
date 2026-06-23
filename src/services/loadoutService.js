@@ -8,6 +8,7 @@ function serializeLoadout(loadout) {
     id: loadout.id,
     playerId: loadout.playerId,
     name: loadout.name,
+    archetype: loadout.archetype || null,
     coreCardId: loadout.coreCardId,
     cards: loadout.cards,
     isActive: loadout.isActive,

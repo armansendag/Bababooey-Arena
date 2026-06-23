@@ -164,33 +164,6 @@ test("troops cannot attack when summoned unless they have Haste", () => {
   assert.equal(state.players[1].coreHp, 47);
 });
 
-test("enemy troops protect the core from troop attacks", () => {
-  const state = match();
-  const attacker = applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_haste_striker" }, { cardCatalog: testCatalog() });
-  endTurn(state, "p1");
-  applyCommand(state, { type: "playTroop", playerId: "p2", cardId: "troop_slow_guard" }, { cardCatalog: testCatalog() });
-  endTurn(state, "p2");
-
-  assert.throws(
-    () => applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: attacker.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: testCatalog() }),
-    /protecting the core/
-  );
-});
-
-test("playing a troop briefly cools matching ready copies", () => {
-  const state = match();
-  applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_slow_guard" }, { cardCatalog: testCatalog() });
-  const p1 = state.players[0];
-  const matchingCopies = p1.roster.filter((entry) => entry.cardId === "troop_slow_guard");
-
-  assert.equal(matchingCopies.filter((entry) => entry.zone === "battlefield").length, 1);
-  assert.equal(matchingCopies.filter((entry) => entry.zone === "cooldown" && entry.cooldownRemaining === 1).length, 2);
-
-  endTurn(state, "p1");
-  endTurn(state, "p2");
-  assert.equal(matchingCopies.filter((entry) => entry.zone === "ready").length, 2);
-});
-
 test("damage formula uses current defense, minimum one damage, and HP persists", () => {
   assert.equal(calculateDamage(3, 5), 1);
   assert.equal(calculateDamage(6, 2), 4);

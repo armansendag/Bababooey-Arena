@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const { cards } = require("../data/cards");
 const { packs } = require("../data/packs");
 const { quests } = require("../data/quests");
+const { DEFAULT_STARTER_ARCHETYPE, STARTER_LOADOUTS } = require("../data/starterLoadouts");
 const { STARTING_COINS } = require("../domain/economy");
 
 function nowIso() {
@@ -39,8 +40,62 @@ function serializeStore(store) {
     matchHistory: store.matchHistory,
     coinTransactions: store.coinTransactions,
     packOpenings: store.packOpenings,
-    playerQuests: Array.from(store.playerQuests.entries())
+    playerQuests: Array.from(store.playerQuests.entries()),
+    errorLogs: store.errorLogs,
+    bugReports: store.bugReports
   };
+}
+
+function starterCardMap() {
+  const owned = new Map([["core_starter", 1]]);
+  for (const loadout of Object.values(STARTER_LOADOUTS)) {
+    owned.set(loadout.coreCardId, 1);
+    for (const [cardId, quantity] of Object.entries(loadout.cards)) {
+      owned.set(cardId, Math.max(owned.get(cardId) || 0, quantity));
+    }
+  }
+  return owned;
+}
+
+function seedStarterDeck(store, playerId, options = {}) {
+  const timestamp = nowIso();
+  const profile = store.profiles.get(playerId);
+  if (!profile) throw new Error("Profile not found.");
+
+  if (options.resetCoins) {
+    profile.coins = STARTING_COINS;
+    profile.updatedAt = timestamp;
+  }
+
+  store.playerCards.set(playerId, starterCardMap());
+
+  if (options.replaceLoadouts) {
+    for (const [id, loadout] of Array.from(store.loadouts.entries())) {
+      if (loadout.playerId === playerId) store.loadouts.delete(id);
+    }
+  } else {
+    for (const loadout of store.loadouts.values()) {
+      if (loadout.playerId === playerId) loadout.isActive = false;
+    }
+  }
+
+  const created = [];
+  for (const [archetype, starter] of Object.entries(STARTER_LOADOUTS)) {
+    const loadout = {
+      id: makeId(),
+      playerId,
+      name: starter.name,
+      archetype,
+      coreCardId: starter.coreCardId,
+      cards: { ...starter.cards },
+      isActive: archetype === DEFAULT_STARTER_ARCHETYPE,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+    store.loadouts.set(loadout.id, loadout);
+    created.push(loadout);
+  }
+  return created.find((loadout) => loadout.isActive) || created[0];
 }
 
 function hydrateStore(store, snapshot) {
@@ -65,6 +120,8 @@ function hydrateStore(store, snapshot) {
   store.coinTransactions = snapshot.coinTransactions || [];
   store.packOpenings = snapshot.packOpenings || [];
   store.playerQuests = mapFromEntries(snapshot.playerQuests);
+  store.errorLogs = snapshot.errorLogs || [];
+  store.bugReports = snapshot.bugReports || [];
 }
 
 function createMemoryStore(options = {}) {
@@ -91,7 +148,9 @@ function createMemoryStore(options = {}) {
     matchHistory: [],
     coinTransactions: [],
     packOpenings: [],
-    playerQuests: new Map()
+    playerQuests: new Map(),
+    errorLogs: [],
+    bugReports: []
   };
 
   hydrateStore(store, options.snapshot);
@@ -115,10 +174,63 @@ function createMemoryStore(options = {}) {
     store.usersByEmail.set(user.email, user);
     store.profiles.set(id, profile);
     store.profilesByFriendCode.set(friendCode, profile);
-    store.playerCards.set(id, new Map([["core_starter", 1]]));
+    seedStarterDeck(store, id, { replaceLoadouts: true });
     if (typeof store.persist === "function") store.persist();
 
     return { user, profile };
+  };
+
+  store.logError = function logError({ level = "error", scope, message, status = 500, userId = null, details = null, metadata = {} }) {
+    const entry = {
+      id: makeId(),
+      level,
+      scope,
+      message,
+      status,
+      userId,
+      details,
+      metadata,
+      createdAt: nowIso()
+    };
+    store.errorLogs.push(entry);
+    store.errorLogs = store.errorLogs.slice(-200);
+    if (typeof store.persist === "function") store.persist();
+    return entry;
+  };
+
+  store.addBugReport = function addBugReport({ reporterId, matchId, message, stateSummary = null }) {
+    const report = {
+      id: makeId(),
+      reporterId,
+      matchId,
+      message: String(message || "").trim(),
+      stateSummary,
+      createdAt: nowIso()
+    };
+    if (!report.message) {
+      const error = new Error("Bug report message is required.");
+      error.status = 400;
+      throw error;
+    }
+    store.bugReports.push(report);
+    if (typeof store.persist === "function") store.persist();
+    return report;
+  };
+
+  store.resetDevAccount = function resetDevAccount(playerId) {
+    const profile = store.profiles.get(playerId);
+    if (!profile) {
+      const error = new Error("User not found.");
+      error.status = 404;
+      throw error;
+    }
+    seedStarterDeck(store, playerId, { resetCoins: true, replaceLoadouts: true });
+    store.playerQuests.delete(playerId);
+    store.rankedRatings.delete(playerId);
+    store.matchmakingQueues.casual = store.matchmakingQueues.casual.filter((entry) => entry.playerId !== playerId);
+    store.matchmakingQueues.ranked = store.matchmakingQueues.ranked.filter((entry) => entry.playerId !== playerId);
+    if (typeof store.persist === "function") store.persist();
+    return profile;
   };
 
   store.addCoinTransaction = function addCoinTransaction({ playerId, amount, reason, sourceId = null, metadata = {} }) {
@@ -146,4 +258,4 @@ function createMemoryStore(options = {}) {
   return store;
 }
 
-module.exports = { createMemoryStore, nowIso, makeId, serializeStore };
+module.exports = { createMemoryStore, nowIso, makeId, seedStarterDeck, serializeStore };

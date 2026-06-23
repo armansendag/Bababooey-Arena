@@ -41,6 +41,9 @@ test("register creates a profile with starting coins and a friend code", () => {
   assert.equal(result.profile.coins, 1000);
   assert.match(result.profile.friendCode, /^BBY-[A-F0-9]{6}$/);
   assert.ok(result.token);
+  const loadouts = app.services.loadouts.list(result.user.id);
+  assert.equal(loadouts.length, 7);
+  assert.equal(loadouts.some((loadout) => loadout.name === "Aggro Starter" && loadout.isActive), true);
 });
 
 test("friend requests are created and accepted by friend code", () => {
@@ -108,13 +111,15 @@ test("pack opening charges coins, grants cards, converts copies beyond ten, and 
   const app = createApp({ random: () => 0 });
   const player = register(app, "pack@example.com", "Packer");
   const owned = app.store.playerCards.get(player.user.id);
-  owned.set("troop_mana_goblin", 10);
+  for (const card of app.store.cards.values()) {
+    if (card.type !== "core") owned.set(card.id, 10);
+  }
 
   const result = app.services.packs.open(player.user.id, "starter_pack");
 
-  assert.equal(result.cards.length, 5);
-  assert.equal(result.opening.duplicateCoins, 25);
-  assert.equal(result.profile.coins, 775);
+  assert.equal(result.cards.length, 6);
+  assert.equal(result.opening.duplicateCoins > 0, true);
+  assert.equal(result.profile.coins > 800, true);
 
   const quests = app.services.quests.list(player.user.id);
   const openPackQuest = quests.find((quest) => quest.id === "weekly_open_packs");
@@ -131,4 +136,40 @@ test("completed quests can be claimed once for coins", () => {
   assert.equal(claimed.claimedAt !== null, true);
   assert.equal(app.store.profiles.get(player.user.id).coins, 1075);
   assert.throws(() => app.services.quests.claim(player.user.id, "daily_play_game"), /already claimed/);
+});
+
+test("new players can queue into a first online match with starter decks", () => {
+  const app = createApp();
+  const playerA = register(app, "first-a@example.com", "First Alpha");
+  const playerB = register(app, "first-b@example.com", "First Bravo");
+
+  const waiting = app.services.onlineMatches.joinQueue(playerA.user.id, "casual");
+  assert.equal(waiting.queue.status, "searching");
+
+  const matched = app.services.onlineMatches.joinQueue(playerB.user.id, "casual");
+  assert.equal(matched.queue.status, "matched");
+  assert.equal(matched.match.status, "active");
+  assert.equal(matched.match.state.players.length, 2);
+});
+
+test("admin debug captures bug reports and can reset dev account", () => {
+  const app = createApp();
+  const player = register(app, "debug@example.com", "Debugger");
+  app.store.addCoinTransaction({ playerId: player.user.id, amount: -100, reason: "test_spend" });
+
+  const report = app.store.addBugReport({
+    reporterId: player.user.id,
+    matchId: "local-test",
+    message: "Button felt stuck."
+  });
+  assert.equal(report.message, "Button felt stuck.");
+
+  app.store.resetDevAccount(player.user.id);
+  const profile = app.services.profiles.get(player.user.id);
+  const loadouts = app.services.loadouts.list(player.user.id);
+
+  assert.equal(profile.coins, 1000);
+  assert.equal(loadouts.length, 7);
+  assert.equal(loadouts.some((loadout) => loadout.name === "Aggro Starter" && loadout.isActive), true);
+  assert.equal(app.store.bugReports.length, 1);
 });

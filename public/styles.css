@@ -33,15 +33,6 @@ select {
   font: inherit;
 }
 
-input {
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #11151c;
-  color: var(--text);
-  min-height: 34px;
-  padding: 7px 10px;
-}
-
 button {
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -174,7 +165,7 @@ button:disabled {
 .hero {
   min-height: 290px;
   border-radius: var(--radius);
-  background: linear-gradient(90deg, rgba(16, 17, 20, .2), rgba(16, 17, 20, .86)), url("/assets/arena.svg") center/cover;
+  background: var(--panel);
   display: grid;
   align-content: end;
   padding: 28px;
@@ -191,49 +182,6 @@ button:disabled {
   color: var(--muted);
   max-width: 650px;
   line-height: 1.5;
-}
-
-.name-gate {
-  min-height: 100vh;
-  grid-template-columns: 1fr;
-  place-items: center;
-  padding: 20px;
-  background: linear-gradient(rgba(10, 12, 16, .35), rgba(10, 12, 16, .82)), url("/assets/arena.svg") center/cover;
-}
-
-.name-panel {
-  width: min(520px, 100%);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: rgba(20, 23, 29, .92);
-  padding: 22px;
-  display: grid;
-  gap: 12px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, .42);
-}
-
-.name-panel h1,
-.name-panel p {
-  margin: 0;
-}
-
-.name-panel h1 {
-  font-size: 32px;
-}
-
-.name-panel p {
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.name-form,
-.profile-form {
-  display: grid;
-  gap: 10px;
-}
-
-.name-form {
-  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .card-grid {
@@ -352,13 +300,6 @@ button:disabled {
   border-radius: 6px;
 }
 
-.selected-row.draft-row {
-  width: 100%;
-  grid-template-columns: 1fr auto;
-  text-align: left;
-  background: #202631;
-}
-
 .pack-stage {
   min-height: 230px;
   display: grid;
@@ -385,7 +326,7 @@ button:disabled {
   min-height: 520px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(rgba(10, 12, 16, .45), rgba(10, 12, 16, .65)), url("/assets/arena.svg") center/cover;
+  background: var(--panel);
   padding: 12px;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -473,6 +414,72 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 12px;
+}
+
+.onboarding-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.onboarding-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.onboarding-steps > div {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #202631;
+  padding: 10px;
+  display: grid;
+  gap: 5px;
+}
+
+.card-filter-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.filter-grid input,
+.filter-grid select {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #11141a;
+  color: var(--text);
+  padding: 9px 10px;
+}
+
+.battle-action-bar {
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+  border: 1px solid rgba(224, 184, 90, .55);
+  border-radius: var(--radius);
+  background: rgba(20, 23, 29, .96);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, .34);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.battle-action-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.battle-action-bar button {
+  min-width: 132px;
+  font-weight: 800;
 }
 
 .roster {
@@ -643,6 +650,8 @@ button:disabled {
   .grid.three,
   .builder,
   .controls,
+  .onboarding-steps,
+  .filter-grid,
   .queue-grid,
   .player-zone {
     grid-template-columns: 1fr;
@@ -857,7 +866,7 @@ button:disabled {
   min-height: 620px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(rgba(10, 12, 16, .25), rgba(10, 12, 16, .88)), url("/assets/arena.svg") center/cover;
+  background: var(--panel);
   padding: 24px;
   display: grid;
   gap: 18px;
@@ -1122,6 +1131,16 @@ button:disabled {
   .card-grid,
   .roster-list {
     grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  }
+
+  .battle-action-bar {
+    align-items: stretch;
+    flex-direction: column;
+    bottom: 8px;
+  }
+
+  .battle-action-bar button {
+    width: 100%;
   }
 
   .core {

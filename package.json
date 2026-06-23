@@ -2,17 +2,18 @@
   "name": "bababooey-arena",
   "version": "0.1.0",
   "private": true,
-  "description": "Bababooey Arena local and online friend-test card battler.",
+  "description": "Bababooey Arena online card battler.",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
-    "smoke:deploy": "node scripts/deploymentSmokeTest.js",
+    "db:migrate": "node scripts/migratePostgres.js",
     "test": "node --test"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "pg": "^8.13.1",
     "ws": "^8.21.0"
   }
 }

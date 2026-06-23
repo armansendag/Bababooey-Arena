@@ -17,13 +17,22 @@
     queueStatus: { status: "idle", mode: null, matchId: null },
     rankedProfile: null,
     leaderboards: { ranked: [], casual: [] },
+    adminDebug: null,
     socket: null,
     connectionStatus: "offline",
     opponentDisconnected: false,
     reconnectTimer: null,
     loadoutDraft: {},
+    loadoutCoreCardId: "core_starter",
     loadoutValidation: null,
     packReveal: null,
+    cardFilters: {
+      query: "",
+      type: "all",
+      faction: "all",
+      rarity: "all",
+      maxCost: "all"
+    },
     match: null,
     battleMode: "local",
     battlePhase: "start",
@@ -33,8 +42,6 @@
     settingsOpen: false,
     feedback: null,
     message: "",
-    profileDraftName: "",
-    signupName: "",
     settings: {
       sound: false,
       animationSpeed: "normal",
@@ -49,7 +56,8 @@
     ["packs", "P", "Packs"],
     ["quests", "Q", "Quests"],
     ["online", "O", "Online"],
-    ["battle", "B", "Battle"]
+    ["battle", "B", "Battle"],
+    ["admin", "A", "Admin"]
   ];
 
   function api(path, options = {}) {
@@ -61,7 +69,10 @@
       body: options.body && typeof options.body !== "string" ? JSON.stringify(options.body) : options.body
     }).then(async (response) => {
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || "Request failed.");
+      if (!response.ok) {
+        const details = Array.isArray(payload.details) ? ` ${payload.details.join(" ")}` : "";
+        throw new Error(`${payload.error || "Request failed."}${details}`);
+      }
       return payload;
     });
   }
@@ -76,20 +87,6 @@
 
   function opponentPlayer() {
     return state.match?.players.find((player) => player.id !== state.match.activePlayerId);
-  }
-
-  function battlefieldPlayers() {
-    const players = state.match?.players || [];
-    const first = players[0] || null;
-    const second = players[1] || null;
-
-    if (state.battleMode === "online" && state.profile?.userId) {
-      const self = players.find((player) => player.id === state.profile.userId);
-      const opponent = players.find((player) => player.id !== state.profile.userId);
-      if (self && opponent) return { top: opponent, bottom: self };
-    }
-
-    return { top: second || first, bottom: first || second };
   }
 
   function authHeaders() {
@@ -182,19 +179,46 @@
     state.leaderboards = leaderboards;
   }
 
+  async function refreshAdminDebug() {
+    if (!state.token) return;
+    try {
+      state.adminDebug = await api("/admin/debug");
+    } catch (error) {
+      state.message = error.message;
+    }
+  }
+
+  async function resetDevAccount(userId) {
+    try {
+      await api("/admin/reset-dev-account", { method: "POST", body: { userId } });
+      await refreshAccountData();
+      await refreshAdminDebug();
+      state.message = "Dev account reset with starter cards, coins, and a fresh Starter Deck.";
+      render();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  function reportMatchBug() {
+    const matchId = state.onlineMatch?.id || state.match?.id || null;
+    const message = prompt("What went wrong in this match?");
+    if (!message) return;
+    api("/match-bug-reports", { method: "POST", body: { matchId, message } })
+      .then(() => setMessage("Bug report sent. Thank you, that helps testing a lot."))
+      .catch((error) => setMessage(error.message));
+  }
+
   function setView(view) {
     state.view = view;
     state.selected = null;
+    if (view === "admin") refreshAdminDebug();
     render();
   }
 
   function setMessage(message) {
     state.message = message;
     render();
-  }
-
-  function normalizeDisplayName(value) {
-    return String(value || "").trim().slice(0, 24);
   }
 
   function playerName(playerId) {
@@ -382,7 +406,7 @@
         <div><strong>Troops</strong><p>Troops need a full turn before attacking unless they have Haste. Select your troop, then a highlighted target.</p></div>
         <div><strong>Spells</strong><p>Spells are reusable. Some resolve instantly, while targeted spells ask for a valid target.</p></div>
         <div><strong>Enchantments</strong><p>You can keep up to 3 active enchantments. Enchantments have HP and can be attacked.</p></div>
-        <div><strong>Core HP</strong><p>Each Core starts at 50 HP. Enemy troops protect the Core until they are cleared.</p></div>
+        <div><strong>Core HP</strong><p>Each Core starts at 50 HP. Reduce the enemy Core to 0 to win.</p></div>
         <div><strong>End Turn</strong><p>Use End Turn when you are finished spending mana and attacking.</p></div>
       </div>
     `;
@@ -455,23 +479,26 @@
       <div class="small">${escapeHtml((cardData.perks || []).join(" | "))}</div>
       <div class="stats">${stats.join("")}</div>
     `;
-    if (!options.onClick) {
-      node.addEventListener("click", () => {
-        state.detailCard = cardData;
-        render();
-      });
-    }
+    node.addEventListener("mouseenter", () => {
+      state.detailCard = cardData;
+      renderDetailOnly();
+    });
+    node.addEventListener("mouseleave", () => {
+      if (state.detailCard?.id === cardData.id) {
+        state.detailCard = null;
+        renderDetailOnly();
+      }
+    });
+    node.addEventListener("dblclick", () => {
+      state.detailCard = cardData;
+      render();
+    });
     if (options.actions) {
       const actions = el("div", "card-actions");
       options.actions.forEach((action) => actions.appendChild(action));
       node.appendChild(actions);
     }
-    if (options.onClick) {
-      node.addEventListener("click", (event) => {
-        state.detailCard = null;
-        options.onClick(event);
-      });
-    }
+    if (options.onClick) node.addEventListener("click", options.onClick);
     return node;
   }
 
@@ -480,104 +507,96 @@
     page.appendChild(titleBar("Home"));
     page.appendChild(el("section", "hero", `
       <h1>Battlefield: Codex</h1>
-      <p>Build a 20-card roster, open packs, complete quests, and play a full local two-player match through the deterministic Phase 2 rules engine.</p>
+      <p>Your account starts with a legal Starter Deck, so you can jump into a local battle, challenge a friend, or queue for casual/ranked immediately.</p>
     `));
-    const stats = el("div", "grid three");
-    const profileSection = el("section", "section");
-    profileSection.innerHTML = `<h2>Profile</h2><div class="pill-row"><span class="pill">${escapeHtml(state.profile?.displayName || "Player")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`;
-    const profileForm = el("form", "profile-form");
-    profileForm.innerHTML = `
-      <label class="setting-row"><span>Display name</span><input name="displayName" maxlength="24" minlength="2" value="${escapeHtml(state.profileDraftName || state.profile?.displayName || "")}"></label>
-      <div class="toolbar"><button type="submit">Save Name</button></div>
+    const onboarding = el("section", "section onboarding-panel");
+    onboarding.innerHTML = `
+      <h2>First Match Checklist</h2>
+      <div class="onboarding-steps">
+        <div><strong>1. Check your deck</strong><span class="small">Open Loadouts to inspect or tweak the active Starter Deck.</span></div>
+        <div><strong>2. Connect online</strong><span class="small">Open Online, connect the socket, then challenge a friend or queue.</span></div>
+        <div><strong>3. Play the turn</strong><span class="small">Spend mana, summon troops, attack valid targets, then press E to end turn.</span></div>
+      </div>
     `;
-    profileForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const input = profileForm.querySelector("input[name='displayName']");
-      updateDisplayName(input.value);
-    });
-    profileSection.appendChild(profileForm);
-    stats.appendChild(profileSection);
+    onboarding.appendChild(iconButton("L", "Open Loadouts", false, () => setView("loadout")));
+    onboarding.appendChild(iconButton("O", "Open Online", false, () => setView("online")));
+    page.appendChild(onboarding);
+    const stats = el("div", "grid three");
+    stats.appendChild(el("section", "section", `<h2>Profile</h2><div class="pill-row"><span class="pill">${escapeHtml(state.profile?.displayName || "Demo")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`));
     stats.appendChild(el("section", "section", `<h2>Collection</h2><div class="pill-row"><span class="pill">${state.collection.filter((item) => item.ownedCount > 0).length} owned cards</span><span class="pill">${state.cards.length} catalog cards</span></div>`));
     stats.appendChild(el("section", "section", `<h2>Battle</h2><div class="pill-row"><span class="pill">${state.match ? "Match ready" : "No match"}</span><span class="pill">${state.match?.status || "idle"}</span></div>`));
     page.appendChild(stats);
     shell(page);
   }
 
-  function renderNameGate() {
-    app.innerHTML = "";
-    const wrapper = el("div", `app name-gate ${motionClass()}`);
-    const panel = el("section", "name-panel");
-    panel.innerHTML = `
-      <div class="brand-title">Bababooey Arena</div>
-      <h1>Choose Your Arena Name</h1>
-      <p>This is the name friends will see on challenges, queues, leaderboards, and your Core in online matches.</p>
-      <form class="name-form">
-        <input name="displayName" maxlength="24" minlength="2" placeholder="Enter display name" value="${escapeHtml(state.signupName)}" autofocus>
-        <button type="submit">Enter Arena</button>
-      </form>
-      <div class="small">2-24 characters. You can change it later from Home.</div>
-      ${state.message ? `<div class="feedback-banner">${escapeHtml(state.message)}</div>` : ""}
-    `;
-    panel.querySelector("form").addEventListener("submit", (event) => {
-      event.preventDefault();
-      const input = panel.querySelector("input[name='displayName']");
-      createPrototypeAccount(input.value);
-    });
-    wrapper.appendChild(panel);
-    app.appendChild(wrapper);
-  }
-
-  async function createPrototypeAccount(displayName) {
-    const nextName = normalizeDisplayName(displayName);
-    if (nextName.length < 2) {
-      state.signupName = nextName;
-      state.message = "Display name must be at least 2 characters.";
-      renderNameGate();
-      return;
-    }
-    state.signupName = nextName;
-    try {
-      const account = await api("/prototype/bootstrap", { method: "POST", body: { displayName: nextName } });
-      state.token = account.token;
-      localStorage.setItem("bababooey_token", account.token);
-      state.message = "";
-      await refreshAccountData();
-      connectOnlineSocket();
-      await startMatch({ navigate: false });
-      state.view = "home";
-      autoFillLoadout();
-      render();
-    } catch (error) {
-      state.message = error.message;
-      renderNameGate();
-    }
-  }
-
-  function updateDisplayName(displayName) {
-    const nextName = normalizeDisplayName(displayName);
-    if (nextName.length < 2) return setMessage("Display name must be at least 2 characters.");
-    api("/me", { method: "PATCH", body: { displayName: nextName } })
-      .then((profile) => {
-        state.profile = profile;
-        state.profileDraftName = profile.displayName;
-        state.message = "Display name updated.";
-        return refreshOnlineData();
-      })
-      .then(render)
-      .catch((error) => setMessage(error.message));
-  }
-
   function renderCollection() {
     const page = el("div", "grid");
     page.appendChild(titleBar("Collection"));
+    page.appendChild(cardFilterPanel());
     const grid = el("div", "card-grid");
-    state.collection.forEach((item) => {
+    filteredCollection().forEach((item) => {
       grid.appendChild(renderCard(item, {
         actions: [el("span", "pill", `Owned ${item.ownedCount}`)]
       }));
     });
+    if (!grid.children.length) grid.appendChild(el("div", "empty", "No cards match those filters."));
     page.appendChild(grid);
     shell(page);
+  }
+
+  function uniqueValues(field) {
+    return Array.from(new Set(state.cards.map((item) => item[field]).filter(Boolean))).sort();
+  }
+
+  function cardFilterPanel() {
+    const panel = el("section", "section card-filter-panel");
+    const filters = state.cardFilters;
+    panel.innerHTML = `
+      <h2>Search Cards</h2>
+      <div class="filter-grid">
+        <input data-card-filter="query" placeholder="Search name or perk" value="${escapeHtml(filters.query)}">
+        <select data-card-filter="type">
+          <option value="all">All types</option>
+          ${uniqueValues("type").map((value) => `<option value="${escapeHtml(value)}" ${filters.type === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
+        </select>
+        <select data-card-filter="faction">
+          <option value="all">All factions</option>
+          ${uniqueValues("faction").map((value) => `<option value="${escapeHtml(value)}" ${filters.faction === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
+        </select>
+        <select data-card-filter="rarity">
+          <option value="all">All rarities</option>
+          ${uniqueValues("rarity").map((value) => `<option value="${escapeHtml(value)}" ${filters.rarity === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
+        </select>
+        <select data-card-filter="maxCost">
+          <option value="all">Any cost</option>
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => `<option value="${value}" ${String(filters.maxCost) === String(value) ? "selected" : ""}>${value} or less</option>`).join("")}
+        </select>
+      </div>
+    `;
+    panel.querySelectorAll("[data-card-filter]").forEach((control) => {
+      control.addEventListener("input", () => {
+        state.cardFilters[control.getAttribute("data-card-filter")] = control.value;
+        render();
+      });
+      control.addEventListener("change", () => {
+        state.cardFilters[control.getAttribute("data-card-filter")] = control.value;
+        render();
+      });
+    });
+    return panel;
+  }
+
+  function filteredCollection() {
+    const filters = state.cardFilters;
+    const query = filters.query.trim().toLowerCase();
+    return state.collection.filter((item) => {
+      if (filters.type !== "all" && item.type !== filters.type) return false;
+      if (filters.faction !== "all" && item.faction !== filters.faction) return false;
+      if (filters.rarity !== "all" && item.rarity !== filters.rarity) return false;
+      if (filters.maxCost !== "all" && item.manaCost > Number(filters.maxCost)) return false;
+      if (!query) return true;
+      return `${item.name} ${(item.perks || []).join(" ")}`.toLowerCase().includes(query);
+    });
   }
 
   function draftCount(cardId) {
@@ -593,7 +612,7 @@
   function validateDraft() {
     return api("/loadouts/validate", {
       method: "POST",
-      body: { name: "Prototype Loadout", coreCardId: "core_starter", cards: state.loadoutDraft }
+      body: { name: "Prototype Loadout", coreCardId: state.loadoutCoreCardId, cards: state.loadoutDraft }
     }).then((result) => {
       state.loadoutValidation = result;
       render();
@@ -601,6 +620,7 @@
   }
 
   function autoFillLoadout() {
+    state.loadoutCoreCardId = "core_starter";
     state.loadoutDraft = {
       troop_mana_goblin: 3,
       troop_mana_slime: 3,
@@ -623,6 +643,10 @@
       iconButton("+", "Autofill", false, autoFillLoadout),
       iconButton("V", "Validate", false, validateDraft)
     ]));
+    page.appendChild(el("section", "section onboarding-panel", `
+      <h2>Starter Deck Ready</h2>
+      <p>Your account already has an active Starter Deck. Use Autofill to inspect the exact starter list, then Validate if you want to confirm a custom draft before testing with friends.</p>
+    `));
     const layout = el("div", "builder");
     const cardPanel = el("section", "section");
     cardPanel.appendChild(el("h2", "", "Available Cards"));
@@ -646,6 +670,13 @@
 
     const selected = el("section", "section");
     selected.appendChild(el("h2", "", "Draft"));
+    const coreChoices = state.collection.filter((item) => item.type === "core" && item.ownedCount > 0);
+    const coreSelect = el("label", "setting-row", `<span>Core</span><select data-core-select>${coreChoices.map((item) => `<option value="${escapeHtml(item.id)}" ${state.loadoutCoreCardId === item.id ? "selected" : ""}>${escapeHtml(item.name)} (${item.hp} HP)</option>`).join("")}</select>`);
+    coreSelect.querySelector("[data-core-select]").addEventListener("change", (event) => {
+      state.loadoutCoreCardId = event.target.value;
+      validateDraft();
+    });
+    selected.appendChild(coreSelect);
     const validation = state.loadoutValidation;
     selected.appendChild(el("div", "pill-row", `
       <span class="pill">Total ${validation?.summary?.total || 0}/20</span>
@@ -657,13 +688,7 @@
     const list = el("div", "selected-list");
     Object.entries(state.loadoutDraft).forEach(([cardId, quantity]) => {
       const item = card(cardId);
-      const row = el("button", "selected-row draft-row", `<strong>${escapeHtml(item?.name || cardId)}</strong><span class="pill">x${quantity}</span>`);
-      row.type = "button";
-      row.addEventListener("click", () => {
-        state.detailCard = item;
-        render();
-      });
-      list.appendChild(row);
+      list.appendChild(el("div", "selected-row", `<strong>${escapeHtml(item?.name || cardId)}</strong><span class="pill">${quantity}</span><span class="small">${escapeHtml(item?.type || "")}</span>`));
     });
     if (Object.keys(state.loadoutDraft).length === 0) list.appendChild(el("div", "empty", "No cards selected."));
     selected.appendChild(list);
@@ -739,6 +764,14 @@
         <span class="pill">${state.challenges.filter((challenge) => challenge.status === "pending").length} pending challenges</span>
         <span class="pill">${state.onlineMatches.length} online matches</span>
         <span class="pill">Rank ${escapeHtml(state.rankedProfile?.tier || "Silver")} ${state.rankedProfile?.rating ?? 1000}</span>
+      </div>
+    `));
+    page.appendChild(el("section", "section onboarding-panel", `
+      <h2>Friend Testing Flow</h2>
+      <div class="onboarding-steps">
+        <div><strong>Use your friend code</strong><span class="small">Share ${escapeHtml(state.profile?.friendCode || "your code")} with a friend, then accept the request.</span></div>
+        <div><strong>Challenge or queue</strong><span class="small">Starter Decks are active by default, so new players can play immediately.</span></div>
+        <div><strong>Report issues</strong><span class="small">Use Report Bug during or after a match so the debug panel captures the match context.</span></div>
       </div>
     `));
 
@@ -838,6 +871,82 @@
     page.lastChild.append(pending, friends);
     page.appendChild(matches);
     page.appendChild(boards);
+    shell(page);
+  }
+
+  function renderAdmin() {
+    const page = el("div", "grid");
+    page.appendChild(titleBar("Admin Debug", [
+      iconButton("R", "Refresh", false, () => refreshAdminDebug().then(render)),
+      iconButton("M", "Reset Me", false, () => resetDevAccount(state.profile?.userId))
+    ]));
+    const debug = state.adminDebug;
+    if (!debug) {
+      page.appendChild(el("section", "section", "<h2>Loading debug data...</h2>"));
+      refreshAdminDebug().then(render);
+      shell(page);
+      return;
+    }
+
+    page.appendChild(el("section", "section", `
+      <h2>Beta Test Console</h2>
+      <div class="pill-row">
+        <span class="pill">${debug.users.length} users</span>
+        <span class="pill">${debug.matches.length} matches</span>
+        <span class="pill">${debug.errors.length} recent logs</span>
+        <span class="pill">${debug.bugReports.length} bug reports</span>
+      </div>
+    `));
+
+    const users = el("section", "section");
+    users.appendChild(el("h2", "", "Users"));
+    const userRows = el("div", "selected-list");
+    debug.users.forEach((user) => {
+      const row = el("div", "selected-row", `<strong>${escapeHtml(user.displayName)}</strong><span class="pill">${user.coins} coins</span><span class="pill">${user.loadoutCount} loadouts</span><span class="small">${escapeHtml(user.email)}</span>`);
+      row.appendChild(iconButton("R", "Reset", false, () => resetDevAccount(user.id)));
+      userRows.appendChild(row);
+    });
+    if (!debug.users.length) userRows.appendChild(el("div", "empty", "No users yet."));
+    users.appendChild(userRows);
+
+    const queues = el("section", "section");
+    queues.appendChild(el("h2", "", "Queues"));
+    queues.appendChild(el("div", "pill-row", `
+      <span class="pill">Casual ${(debug.queues.casual || []).length}</span>
+      <span class="pill">Ranked ${(debug.queues.ranked || []).length}</span>
+    `));
+
+    const matches = el("section", "section");
+    matches.appendChild(el("h2", "", "Matches"));
+    const matchRows = el("div", "selected-list");
+    debug.matches.forEach((match) => {
+      matchRows.appendChild(el("div", "selected-row", `<strong>${escapeHtml(match.mode)} ${escapeHtml(match.status)}</strong><span class="pill">Turn ${match.turnNumber || 0}</span><span class="pill">${match.eventCount} events</span><span class="small">${escapeHtml(match.id)}</span>`));
+    });
+    if (!debug.matches.length) matchRows.appendChild(el("div", "empty", "No online matches yet."));
+    matches.appendChild(matchRows);
+
+    const errors = el("section", "section");
+    errors.appendChild(el("h2", "", "Logs And Rejections"));
+    const errorRows = el("div", "selected-list");
+    debug.errors.slice(0, 12).forEach((entry) => {
+      errorRows.appendChild(el("div", "selected-row", `<strong>${escapeHtml(entry.level)} ${escapeHtml(entry.scope)}</strong><span class="pill">${entry.status}</span><span class="small">${escapeHtml(entry.message)}</span>`));
+    });
+    if (!debug.errors.length) errorRows.appendChild(el("div", "empty", "No logs yet."));
+    errors.appendChild(errorRows);
+
+    const reports = el("section", "section");
+    reports.appendChild(el("h2", "", "Bug Reports"));
+    const reportRows = el("div", "selected-list");
+    debug.bugReports.slice(0, 12).forEach((report) => {
+      reportRows.appendChild(el("div", "selected-row", `<strong>${escapeHtml(report.matchId || "No match")}</strong><span class="small">${escapeHtml(report.message)}</span>`));
+    });
+    if (!debug.bugReports.length) reportRows.appendChild(el("div", "empty", "No bug reports yet."));
+    reports.appendChild(reportRows);
+
+    const grid = el("div", "grid two");
+    grid.append(users, queues, matches, errors);
+    page.appendChild(grid);
+    page.appendChild(reports);
     shell(page);
   }
 
@@ -1010,8 +1119,9 @@
     const zone = el("div", "player-zone");
     const coreHit = state.feedback?.target?.type === "core" && state.feedback.target.playerId === player.id;
     const core = el("div", `core ${active ? "active" : ""} ${coreHit ? "damage core-hit" : ""}`);
-    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, (player.coreHp / 50) * 100)}%"></span></div><div>${player.coreHp} / 50 HP</div><div class="small">Mana ${player.currentMana}/${player.baseMaxMana}${player.temporaryMana ? ` +${player.temporaryMana}` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
-    if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker" && player.troops.length === 0) {
+    const maxCoreHp = card(player.coreCardId)?.hp || 50;
+    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, Math.min(100, (player.coreHp / maxCoreHp) * 100))}%"></span></div><div>${player.coreHp} / ${maxCoreHp} HP</div><div class="small">Mana ${player.currentMana}/${player.baseMaxMana}${player.temporaryMana ? ` +${player.temporaryMana}` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
+    if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker") {
       core.classList.add("targetable");
       core.setAttribute("title", "Valid core target");
       core.addEventListener("click", () => sendBattleCommand({
@@ -1059,7 +1169,7 @@
     section.innerHTML = `
       <div class="versus-title">
         <h2>Local Match Ready</h2>
-        <p>Two players. Two 50 HP Cores. Clear enemy troops before striking the Core.</p>
+        <p>Two players. Two 50 HP Cores. One deterministic rules engine.</p>
       </div>
       <div class="versus-grid">
         <div class="versus-player"><h3>Player 1</h3><div class="core-orb">50</div><div class="pill-row"><span class="pill">Starts first</span><span class="pill">${p1.roster.length} cards</span></div></div>
@@ -1113,6 +1223,7 @@
       events.appendChild(el("span", "pill", `${type.replaceAll("_", " ")}: ${count}`));
     });
     panel.appendChild(events);
+    panel.appendChild(iconButton("!", "Report Bug", false, reportMatchBug));
     panel.appendChild(iconButton("N", "New Match", false, () => startMatch({ navigate: true })));
     return panel;
   }
@@ -1130,7 +1241,8 @@
           startMatch();
         }
       }),
-      iconButton("E", "End Turn", !state.match || state.match.status !== "active", () => sendBattleCommand({ type: "endTurn", playerId: state.match.activePlayerId }))
+      iconButton("!", "Report Bug", !state.match, reportMatchBug),
+      iconButton("E", "End Turn", !canEndTurn(), endActiveTurn)
     ]));
     if (!state.match) {
       page.appendChild(el("section", "hero", `<h1>Local Match</h1><p>Create a local two-player match powered by the Phase 2 deterministic battle engine.</p>`));
@@ -1148,14 +1260,15 @@
       return;
     }
     const active = activePlayer();
-    const fixedSides = battlefieldPlayers();
+    const enemy = opponentPlayer();
     const summary = el("section", `section battle-summary ${state.match.status === "finished" ? "winner" : ""}`, `<div class="pill-row"><span class="pill">${state.battleMode === "online" ? `Online ${escapeHtml(state.onlineMatch?.mode || "friend")} match` : "Local battle"}</span><span class="pill">Connection ${escapeHtml(state.battleMode === "online" ? state.connectionStatus : "local")}</span>${state.opponentDisconnected ? `<span class="pill">Opponent disconnected</span>` : ""}<span class="pill">Turn ${state.match.turnNumber}</span><span class="pill">Active ${playerName(active.id)}</span><span class="pill">Mana ${active.currentMana}/${active.baseMaxMana}</span><span class="pill">${state.match.status}</span>${state.match.winnerId ? `<span class="pill">Winner ${playerName(state.match.winnerId)}</span>` : ""}</div>${state.connectionStatus === "reconnecting" && state.battleMode === "online" ? `<div class="feedback-banner">Reconnecting to online match...</div>` : ""}${state.feedback ? `<div class="feedback-banner">${escapeHtml(state.feedback.text)}</div>` : ""}`);
     page.appendChild(summary);
     const arena = el("section", "arena");
-    arena.appendChild(playerZone(fixedSides.top, true));
+    arena.appendChild(playerZone(enemy, true));
     arena.appendChild(el("div", `targeting-guide ${state.selected ? "active" : ""}`, state.selected ? selectedText() : "Select a ready troop to attack, or play a card from the roster."));
-    arena.appendChild(playerZone(fixedSides.bottom, false));
+    arena.appendChild(playerZone(active, false));
     page.appendChild(arena);
+    page.appendChild(renderBattleActionBar(active));
 
     const controls = el("div", "controls");
     const rosterPanel = el("section", "section roster");
@@ -1179,8 +1292,29 @@
     shell(page);
   }
 
+  function canEndTurn() {
+    if (!state.match || state.match.status !== "active" || state.battlePhase !== "playing") return false;
+    if (state.battleMode !== "online") return true;
+    return state.match.activePlayerId === state.profile?.userId;
+  }
+
+  function endActiveTurn() {
+    if (!canEndTurn()) return;
+    sendBattleCommand({ type: "endTurn", playerId: state.match.activePlayerId });
+  }
+
+  function renderBattleActionBar(active) {
+    const bar = el("section", "battle-action-bar");
+    const hint = state.battleMode === "online" && !canEndTurn()
+      ? "Waiting for opponent."
+      : "Press E to end turn.";
+    bar.appendChild(el("div", "battle-action-copy", `<strong>${escapeHtml(playerName(active.id))}'s turn</strong><span class="small">${escapeHtml(hint)}</span>`));
+    bar.appendChild(iconButton("E", "End Turn", !canEndTurn(), endActiveTurn));
+    return bar;
+  }
+
   function selectedText() {
-    if (state.selected.kind === "attacker") return "Choose an enemy troop or enchantment. The Core is targetable once enemy troops are gone.";
+    if (state.selected.kind === "attacker") return "Choose an enemy troop, enchantment, or core.";
     if (state.selected.kind === "spell" && state.selected.cardId === "spell_disenchant") return "Disenchant selected: choose a glowing enemy enchantment.";
     if (state.selected.kind === "spell") return "Spell selected: choose a highlighted valid target.";
     return "";
@@ -1246,7 +1380,18 @@
     if (state.view === "quests") return renderQuests();
     if (state.view === "online") return renderOnline();
     if (state.view === "battle") return renderBattle();
+    if (state.view === "admin") return renderAdmin();
   }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key.toLowerCase() !== "e" || event.repeat) return;
+    const target = event.target;
+    if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+    if (state.view !== "battle" || state.tutorialOpen || state.settingsOpen || state.detailCard) return;
+    if (!canEndTurn()) return;
+    event.preventDefault();
+    endActiveTurn();
+  });
 
   async function refreshAccountData() {
     const [profile, cards, collection, quests, packs] = await Promise.all([
@@ -1277,8 +1422,10 @@
         }
       }
       if (!state.token) {
-        renderNameGate();
-        return;
+        const account = await api("/prototype/bootstrap", { method: "POST" });
+        state.token = account.token;
+        localStorage.setItem("bababooey_token", account.token);
+        await refreshAccountData();
       }
       connectOnlineSocket();
       const savedMatchId = localStorage.getItem("bababooey_online_match_id");

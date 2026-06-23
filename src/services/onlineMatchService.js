@@ -96,6 +96,30 @@ function createOnlineMatchService(store, options = {}) {
     if (typeof store.persist === "function") store.persist();
   }
 
+  function logMatchCommand(match, userId, intent, result, status = "accepted") {
+    const message = status === "accepted"
+      ? `Match command accepted: ${intent?.type || "unknown"}.`
+      : `Match command rejected: ${result?.message || "Unknown rejection."}`;
+    const metadata = {
+      matchId: match?.id || null,
+      mode: match?.mode || null,
+      commandType: intent?.type || null,
+      status
+    };
+    console.log(`[match:${metadata.matchId || "none"}] ${message}`);
+    if (typeof store.logError === "function") {
+      store.logError({
+        level: status === "accepted" ? "info" : "warn",
+        scope: "match_command",
+        message,
+        status: result?.status || 200,
+        userId,
+        details: result?.details || null,
+        metadata
+      });
+    }
+  }
+
   function emit(userId, message) {
     const set = listeners.get(userId);
     if (!set) return;
@@ -148,7 +172,7 @@ function createOnlineMatchService(store, options = {}) {
     const loadouts = Array.from(store.loadouts.values()).filter((loadout) => loadout.playerId === playerId);
     const loadout = loadouts.find((item) => item.isActive) || loadouts[0];
     if (!loadout) {
-      const error = new Error(`Player must select a valid loadout before ${context}.`);
+      const error = new Error(`Matchmaking blocked: build or use the Starter Deck before ${context}.`);
       error.status = 400;
       throw error;
     }
@@ -161,7 +185,7 @@ function createOnlineMatchService(store, options = {}) {
       store.cards
     );
     if (!validation.valid) {
-      const error = new Error(`Player must select a valid loadout before ${context}.`);
+      const error = new Error(`Matchmaking blocked: your active loadout needs fixes before ${context}. Open Loadouts and use Autofill if needed.`);
       error.status = 400;
       error.details = validation.errors;
       throw error;
@@ -189,17 +213,17 @@ function createOnlineMatchService(store, options = {}) {
   function sendChallenge(challengerId, challengedId) {
     rateLimit(challengerId, "friend_challenge", 5, 60_000);
     if (!store.users.has(challengedId)) {
-      const error = new Error("Challenged player not found.");
+      const error = new Error("Challenge failed: that player could not be found. Refresh your friends list and try again.");
       error.status = 404;
       throw error;
     }
     if (challengerId === challengedId) {
-      const error = new Error("Cannot challenge yourself.");
+      const error = new Error("Challenge failed: you cannot challenge yourself.");
       error.status = 400;
       throw error;
     }
     if (!areFriends(challengerId, challengedId)) {
-      const error = new Error("Friend challenges require an accepted friendship.");
+      const error = new Error("Challenge failed: both players must accept the friend request first.");
       error.status = 403;
       throw error;
     }
@@ -365,7 +389,7 @@ function createOnlineMatchService(store, options = {}) {
 
   function joinQueue(userId, mode) {
     if (!["casual", "ranked"].includes(mode)) {
-      const error = new Error("Unsupported queue mode.");
+      const error = new Error("Matchmaking failed: unsupported queue mode.");
       error.status = 400;
       throw error;
     }
@@ -373,7 +397,7 @@ function createOnlineMatchService(store, options = {}) {
     findActiveLoadout(userId, `joining ${mode} queue`);
     if (mode === "ranked") ensureRating(userId);
     if (activeMatchForPlayer(userId)) {
-      const error = new Error("Finish your active online match before joining a queue.");
+      const error = new Error("Matchmaking failed: finish your active online match before joining another queue.");
       error.status = 400;
       throw error;
     }
@@ -576,21 +600,30 @@ function createOnlineMatchService(store, options = {}) {
     if (!match || !match.playerIds.includes(userId)) {
       const error = new Error("Online match not found.");
       error.status = 404;
+      logMatchCommand(null, userId, intent, error, "rejected");
       throw error;
     }
     if (match.status !== "active") {
       const error = new Error("Match is not active.");
       error.status = 400;
+      logMatchCommand(match, userId, intent, error, "rejected");
       throw error;
     }
     const previousLength = match.state.eventLog.length;
-    const safeIntent = validateIntent(intent);
+    let safeIntent;
+    try {
+      safeIntent = validateIntent(intent);
+    } catch (error) {
+      logMatchCommand(match, userId, intent, error, "rejected");
+      throw error;
+    }
     const commandPayload = { ...safeIntent, playerId: userId };
     let result;
     try {
       result = applyCommand(match.state, commandPayload, { cardCatalog });
     } catch (error) {
       error.message = `Invalid command: ${error.message}`;
+      logMatchCommand(match, userId, safeIntent, error, "rejected");
       throw error;
     }
     persistNewEvents(match, previousLength);
@@ -600,6 +633,7 @@ function createOnlineMatchService(store, options = {}) {
     persistStore();
     const serialized = serializeOnlineMatch(store, match);
     emitToMatch(match, { type: "match_state", match: serialized, result: clone(result) });
+    logMatchCommand(match, userId, safeIntent, { status: 200 }, "accepted");
     return { result: clone(result), match: serialized };
   }
 

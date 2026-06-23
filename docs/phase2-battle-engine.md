@@ -23,7 +23,7 @@ Each match tracks:
 - `activePlayerId`
 - `eventLog`
 - per-player state:
-  - `coreHp`, starting at 300
+  - `coreHp`, starting at 50
   - `baseMaxMana`, `currentMana`, `temporaryMana`
   - `coinAvailable` for player 2
   - `roster`
@@ -55,7 +55,7 @@ Attack targets:
 
 ## Rules Implemented
 
-- Core HP starts at 300.
+- Core HP starts at 50.
 - Player 1 starts the match.
 - Mana starts at 1 for the active player.
 - Each player's max mana increases by 1 at the start of their own turn, capped at 10.

@@ -1,24 +1,20 @@
-"use strict";
-
+const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
-const assert = require("node:assert/strict");
 
-test("battlefield sides stay fixed instead of following active player", () => {
-  const source = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
+const root = path.join(__dirname, "..");
 
-  assert.match(source, /function battlefieldPlayers\(\)/);
-  assert.match(source, /return \{ top: second \|\| first, bottom: first \|\| second \}/);
-  assert.doesNotMatch(source, /arena\.appendChild\(playerZone\(active, false\)\)/);
-  assert.doesNotMatch(source, /arena\.appendChild\(playerZone\(enemy, true\)\)/);
-});
+test("battle end turn control stays reachable and supports E keybind", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
 
-test("frontend reflects 50 hp cores and troop-protected core targeting", () => {
-  const source = fs.readFileSync(path.join(__dirname, "..", "public", "app.js"), "utf8");
-
-  assert.match(source, /Each Core starts at 50 HP/);
-  assert.match(source, /player\.troops\.length === 0/);
-  assert.match(source, /Core is targetable once enemy troops are gone/);
-  assert.doesNotMatch(source, /300 HP/);
+  assert.match(appSource, /function canEndTurn\(\)/);
+  assert.match(appSource, /function endActiveTurn\(\)/);
+  assert.match(appSource, /renderBattleActionBar/);
+  assert.match(appSource, /Press E to end turn\./);
+  assert.match(appSource, /event\.key\.toLowerCase\(\) !== "e"/);
+  assert.match(appSource, /\["INPUT", "TEXTAREA", "SELECT"\]\.includes\(target\.tagName\)/);
+  assert.match(cssSource, /\.battle-action-bar\s*\{/);
+  assert.match(cssSource, /position:\s*sticky/);
 });

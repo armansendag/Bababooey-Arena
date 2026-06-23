@@ -20,6 +20,17 @@ function writeSnapshot(filePath, snapshot) {
 
 function createJsonBackedStore(filePath) {
   const store = createMemoryStore({ snapshot: readSnapshot(filePath) });
+  store.persistence = {
+    type: "json",
+    connected: true,
+    databaseName: null,
+    dataFile: filePath,
+    migrationStatus: {
+      mode: "not_applicable",
+      applied: [],
+      skipped: []
+    }
+  };
   store.persist = function persist() {
     writeSnapshot(filePath, serializeStore(store));
   };

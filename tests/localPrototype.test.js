@@ -80,36 +80,6 @@ test("prototype UI flow can bootstrap and drive a local battle through HTTP comm
   assert.equal(match.players[1].troops[0].hp < 3, true);
 });
 
-test("prototype bootstrap and profile update use player display names", async (t) => {
-  const app = createApp();
-  const { server, baseUrl } = await listen(app);
-  t.after(() => server.close());
-
-  const account = await request(baseUrl, "/prototype/bootstrap", {
-    method: "POST",
-    body: { displayName: "Arena Ace" }
-  });
-  const auth = { authorization: `Bearer ${account.token}` };
-
-  assert.equal(account.profile.displayName, "Arena Ace");
-
-  const updated = await request(baseUrl, "/me", {
-    method: "PATCH",
-    headers: auth,
-    body: { displayName: "Core Crusher" }
-  });
-  assert.equal(updated.displayName, "Core Crusher");
-
-  await assert.rejects(
-    () => request(baseUrl, "/me", {
-      method: "PATCH",
-      headers: auth,
-      body: { displayName: "A" }
-    }),
-    /Display name/
-  );
-});
-
 test("local prototype command flow can finish a full match", async (t) => {
   const app = createApp();
   const { server, baseUrl } = await listen(app);
@@ -134,8 +104,10 @@ test("local prototype command flow can finish a full match", async (t) => {
     throw new Error("Player 1 never became ready to cast Sit.");
   }
 
-  await passUntilPlayerOneReadyForSit();
-  await command({ type: "castSpell", playerId: "player_1", cardId: "spell_sit" });
+  for (let cast = 0; cast < 3 && match.status === "active"; cast += 1) {
+    await passUntilPlayerOneReadyForSit();
+    await command({ type: "castSpell", playerId: "player_1", cardId: "spell_sit" });
+  }
 
   assert.equal(match.status, "finished");
   assert.equal(match.winnerId, "player_1");

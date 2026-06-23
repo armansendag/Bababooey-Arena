@@ -30,6 +30,7 @@ function grantCard(store, playerId, cardId, source) {
   }
 
   owned.set(cardId, current + 1);
+  if (typeof store.persist === "function") store.persist();
   return { card, added: true, duplicateCoins: 0, ownedCount: current + 1 };
 }
 

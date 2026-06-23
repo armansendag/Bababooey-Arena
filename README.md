@@ -1,197 +1,146 @@
 # Bababooey Arena
 
-Bababooey Arena is a local/offline and online friend-test prototype for **Battlefield: Codex**. It includes accounts, profiles, friends, collections, loadouts, packs, quests, a deterministic battle engine, live friend matches, casual queue, ranked queue foundation, rewards, match history, and a static browser UI served by the same Node server.
-
-This deployment prep keeps the current JSON-backed store so the game can be tested quickly with friends before moving to a managed database.
+Bababooey Arena is a local and online card battler built on a deterministic server-authoritative battle engine.
 
 ## Run Locally
 
-Install dependencies:
+Install dependencies, then start the server:
 
 ```powershell
 npm install
-```
-
-Start the app:
-
-```powershell
 npm start
 ```
 
-Open:
-
-```text
-http://localhost:3000
-```
-
-Run tests:
-
-```powershell
-npm test
-```
-
-Run the deployment smoke test:
-
-```powershell
-npm run smoke:deploy
-```
-
-## Environment Variables
-
-Copy `.env.example` if you want a local reference:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-The app currently reads environment variables directly from the process. It does not require `dotenv`.
-
-| Variable | Required | Default | Notes |
-| --- | --- | --- | --- |
-| `PORT` | No | `3000` | Render sets this automatically. Local `npm start` uses `3000` if unset. |
-| `DATA_FILE` | No | `data/dev-store.json` | Path for the current JSON store. Render free-tier suggestion: `/tmp/bababooey-arena-store.json`. |
-| `NODE_ENV` | No | unset | Set to `production` on Render. |
-| `PUBLIC_URL` | No | unset | Documentation hint only for now. Friends use your Render URL directly. |
-
-## Start Command
-
-```text
-npm start
-```
-
-The server listens on:
-
-```js
-process.env.PORT || 3000
-```
-
-## Health Check URL
-
-```text
-/health
-```
-
-Local:
+The app listens on `http://localhost:3000` by default. Health check:
 
 ```text
 http://localhost:3000/health
 ```
 
-Render:
+If `DATABASE_URL` is not set, the app uses the JSON dev store at `data/dev-store.json` or `DATA_FILE`. This is convenient for quick friend tests and local development, but JSON storage is not production-safe long term.
+
+## Environment
+
+Copy `.env.example` into your deployment environment and set values there.
 
 ```text
-https://YOUR-RENDER-SERVICE.onrender.com/health
+PORT=3000
+DATA_FILE=data/dev-store.json
+DATABASE_URL=
+PGSSL=true
 ```
 
-## Deploy To Render Free Tier
+`DATABASE_URL` enables PostgreSQL. Without it, the server falls back to JSON mode.
 
-1. Push this repository to GitHub.
-2. In Render, choose **New +** then **Web Service**.
-3. Connect the GitHub repository.
-4. Use these settings:
+## PostgreSQL Setup
 
-| Setting | Value |
-| --- | --- |
-| Runtime | Node |
-| Build Command | `npm install` |
-| Start Command | `npm start` |
-| Health Check Path | `/health` |
-| Instance Type | Free |
+Production should use PostgreSQL through Neon, Render Postgres, or Supabase Postgres.
 
+The server automatically applies SQL files from `db/` on startup when `DATABASE_URL` is present. You can also run migrations manually:
+
+```powershell
+npm run db:migrate
+```
+
+PostgreSQL mode persists users, profiles, sessions, collections, loadouts, friends, quests, packs, matches, event logs, ratings, leaderboards, coin transactions, bug reports, and online match snapshots. Online matches and rewards are restored from the durable store after restart, redeploy, or browser refresh.
+
+On startup with PostgreSQL enabled, Render logs should include:
+
+```text
+Connected to PostgreSQL database: <database-name>
+Migration status: <n> applied, <n> already applied, <n> total.
+```
+
+## Deploy To Render With Neon
+
+### GitHub Checklist
+
+1. Commit the project with `package.json`, `package-lock.json`, `db/`, `src/`, `public/`, `.env.example`, and `README.md`.
+2. Push to the GitHub repository Render will deploy.
+3. Confirm `data/` and `.env` stay ignored.
+
+### Neon Database Checklist
+
+1. Create a Neon project.
+2. Create or use the default database.
+3. Copy the pooled or direct PostgreSQL connection string.
+4. Keep SSL enabled. Neon URLs commonly include `sslmode=require`; `PGSSL=true` also works with this app.
+5. Save the connection string for Render as `DATABASE_URL`.
+
+### Render Web Service Checklist
+
+1. Create a Render Web Service from the GitHub repository.
+2. Runtime: Node.
+3. Build command: `npm install`.
+4. Start command: `npm start`.
 5. Add environment variables:
+   - `PORT` is provided by Render automatically.
+   - `DATABASE_URL` from Neon.
+   - `PGSSL=true`
+   - `ENABLE_ADMIN_DEBUG=false` normally, or `true` temporarily when checking `/debug/persistence`.
+6. Health check path: `/health`.
+7. Deploy and watch logs for the PostgreSQL and migration messages above.
 
-| Key | Value |
-| --- | --- |
-| `NODE_ENV` | `production` |
-| `DATA_FILE` | `/tmp/bababooey-arena-store.json` |
+For Render Postgres, create a Render PostgreSQL database and copy its connection string into `DATABASE_URL`.
 
-6. Deploy.
-7. Open the public Render URL when the deploy finishes.
+For Supabase, copy the project PostgreSQL connection string into `DATABASE_URL`. Keep SSL enabled; add `?sslmode=require` if Supabase provides a URL without SSL mode.
 
-This repo also includes `render.yaml`, so Render can detect the same recommended settings if you use Blueprint deployment.
+Friends connect by opening the Render public URL in their browser. The same URL serves the frontend, API, and WebSocket match connection.
 
-## How Friends Connect
+## Persistence Verification
 
-After Render deploys, send friends your public URL:
+Use this checklist after a production deploy:
 
-```text
-https://YOUR-RENDER-SERVICE.onrender.com
+1. Open `/health` and confirm `{ "ok": true }`.
+2. Register two accounts.
+3. Open packs and confirm coins/cards change.
+4. Build or activate loadouts.
+5. Add the two accounts as friends.
+6. Complete a ranked or casual match.
+7. Refresh both browsers and confirm the accounts remain logged in.
+8. Trigger a Render manual deploy or restart.
+9. Log back in and confirm coins, collection, loadouts, friends, match history, ranked rating, and rewards still exist.
+10. Temporarily set `ENABLE_ADMIN_DEBUG=true`, redeploy, log in, and open `/debug/persistence`.
+
+`/debug/persistence` reports the active store type, database connection state, database name, migration status, and counts for users, collections, loadouts, friends, pack openings, matches, match history, ranked ratings, and coin transactions. Disable `ENABLE_ADMIN_DEBUG` again after checking production.
+
+## JSON Friend Testing
+
+For tiny private tests, you may omit `DATABASE_URL` and let Render use the JSON store. This can work for quick experiments, but data may be lost on restarts or redeploys. Use PostgreSQL for any real beta session.
+
+## Future Database Work
+
+The current PostgreSQL adapter keeps the existing store interface and writes a durable app snapshot while also migrating and seeding the SQL schema. A future Supabase/Postgres migration can move each service to direct normalized table reads and writes once gameplay and content are stable.
+
+## Test
+
+```powershell
+npm test
 ```
 
-Each friend opens the link in a browser. The prototype creates a local test account automatically when no saved session exists. Friends can use the Online screen to connect, challenge accepted friends, or queue for Casual/Ranked testing.
+## Deployment Smoke Test
 
-WebSockets use the same host as the page, so no extra client configuration is needed.
+1. Open `/health` and confirm `{ "ok": true }`.
+2. Register two accounts.
+3. Confirm each account has starter decks.
+4. Start a casual queue match or friend challenge.
+5. Play a few commands and refresh both browsers.
+6. Confirm the match restores.
+7. Finish the match.
+8. Confirm match history and rewards show once.
 
-## JSON Store For Friend Testing
+## Troubleshooting
 
-The current server uses `src/store/jsonStore.js` and writes app state to `DATA_FILE`.
+`Cannot find module 'pg'`: run `npm install` and make sure `package-lock.json` is committed. Render build command should be `npm install`.
 
-For small friend tests, this is simple and fine:
+`DATABASE_URL is required`: this only appears when running `npm run db:migrate` without a database URL. Set `DATABASE_URL` in Render or your local shell first.
 
-- accounts
-- sessions
-- collections
-- loadouts
-- friendships
-- online matches
-- match history
-- ranked ratings
-- coin transactions
+PostgreSQL SSL errors: set `PGSSL=true`. Neon and most hosted Postgres providers require SSL.
 
-On Render free tier, `/tmp/bababooey-arena-store.json` is writable, but it is ephemeral. Data can disappear after restarts, redeploys, service moves, or platform cleanup.
+App starts in JSON mode on Render: `DATABASE_URL` is missing or blank. Add the Neon connection string to Render environment variables and redeploy.
 
-## Important Storage Warning
+Migrations fail on an existing manually-created database: use a fresh Neon database for beta testing, or check the `schema_migrations` table before rerunning SQL by hand.
 
-The JSON store is **not production-safe long-term**.
+Data disappears after redeploy: confirm startup logs say `PostgreSQL store`, not `JSON store`, and confirm `/debug/persistence` reports `storeType: "postgresql"`.
 
-Known limits:
-
-- no multi-instance safety
-- no real transaction isolation
-- no backups unless you add them yourself
-- data may reset on Render free tier
-- large files will become slow and fragile
-- simultaneous writes can become risky as traffic grows
-
-Use it only for early public friend testing.
-
-## Future Supabase/Postgres Migration Notes
-
-The `db/` folder contains the current relational schema direction:
-
-- `001_phase1_schema.sql`
-- `002_online_friend_matches.sql`
-- `003_matchmaking_ranked.sql`
-
-Recommended next persistence step:
-
-1. Create a Supabase project or managed Postgres database.
-2. Run the schema migrations in order.
-3. Add a Postgres-backed store that implements the same service-facing operations currently handled by the memory/JSON store.
-4. Move sessions, profiles, loadouts, collections, matches, event logs, match history, ranked ratings, and coin transactions into Postgres.
-5. Keep the battle engine deterministic and server-authoritative.
-6. Add migration/export tooling from the JSON file if friend-test data needs to be preserved.
-
-Do not require Postgres for the first friend test. The JSON store is intentionally still supported.
-
-## Deployment Smoke Checklist
-
-Before sending the URL to friends:
-
-- `npm test` passes locally.
-- `npm run smoke:deploy` passes locally.
-- Render deploy logs show the service listening on the assigned port.
-- `https://YOUR-RENDER-SERVICE.onrender.com/health` returns `{ "ok": true }`.
-- The public URL loads the Bababooey Arena UI.
-- Open the URL in two different browsers or profiles.
-- Confirm both clients can reach the Online screen.
-- Create or use active loadouts.
-- Join Casual Queue from both clients and confirm a match starts.
-- Play a few turns and confirm both screens update.
-
-## Production Notes
-
-- The frontend is served from `public/` by `src/app.js`.
-- API routes and WebSocket upgrades are served by the same Node process.
-- `npm start` works locally and on Render.
-- No PostgreSQL service is required for this deployment-prep phase.
+WebSocket connection fails from friends' browsers: use the Render public `https://` URL, not localhost. The frontend automatically chooses `wss://` on HTTPS.

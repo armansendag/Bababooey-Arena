@@ -27,12 +27,19 @@ function createPackService(store, collectionService, questService, random = Math
 
     const resultCards = [];
     let duplicateCoins = 0;
-    const activeCards = Array.from(store.cards.values()).filter((card) => card.type !== "core");
+    const activeCards = Array.from(store.cards.values()).filter((card) => pack.includeCores || card.type !== "core");
 
     for (let i = 0; i < pack.cardsPerPack; i += 1) {
-      const rarityPick = weightedPick(pack.dropTable, random);
-      const rarityPool = activeCards.filter((card) => card.rarity === rarityPick.rarity);
-      const pool = rarityPool.length > 0 ? rarityPool : activeCards;
+      const guaranteed = (pack.guaranteedSlots || [])[i] || null;
+      const rarityPick = guaranteed?.rarity ? guaranteed : weightedPick(pack.dropTable, random);
+      let pool = activeCards;
+      if (pack.types?.length) pool = pool.filter((card) => pack.types.includes(card.type));
+      if (guaranteed?.type) pool = pool.filter((card) => card.type === guaranteed.type);
+      if (rarityPick?.rarity) {
+        const rarityPool = pool.filter((card) => card.rarity === rarityPick.rarity);
+        pool = rarityPool.length > 0 ? rarityPool : pool;
+      }
+      if (pool.length === 0) pool = activeCards;
       const card = pool[Math.floor(random() * pool.length)];
       const grant = collectionService.grantCard(card.id, playerId, `pack:${pack.id}`);
       duplicateCoins += grant.duplicateCoins;
@@ -61,6 +68,7 @@ function createPackService(store, collectionService, questService, random = Math
     if (resultCards.some((result) => ["rare", "epic", "legendary", "mythic", "bababooey"].includes(result.card.rarity))) {
       questService.recordProgress(playerId, "get_rare_plus", 1);
     }
+    if (typeof store.persist === "function") store.persist();
 
     return { opening, cards: resultCards, profile: store.profiles.get(playerId) };
   }

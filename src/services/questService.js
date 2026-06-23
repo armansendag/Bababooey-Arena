@@ -39,6 +39,7 @@ function createQuestService(store) {
       }
       updated.push(serialize(quest, playerQuest));
     }
+    if (updated.length > 0 && typeof store.persist === "function") store.persist();
     return updated;
   }
 

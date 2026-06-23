@@ -156,8 +156,10 @@ function finishWithSitWin(app, match, winner, loser) {
     }
     throw new Error("Winner never became ready to cast Sit.");
   }
-  readyForSit();
-  command(winner.user.id, { type: "castSpell", cardId: "spell_sit" });
+  for (let i = 0; i < 3 && current.status === "active"; i += 1) {
+    readyForSit();
+    command(winner.user.id, { type: "castSpell", cardId: "spell_sit" });
+  }
   assert.equal(current.status, "finished");
   assert.equal(current.winnerId, winner.user.id);
   assert.ok(loser.user.id);
@@ -310,8 +312,10 @@ test("a full online friend match can finish and records history plus rewards", a
     throw new Error("Player 1 never became ready to cast Sit.");
   }
 
-  await passUntilPlayerOneReadyForSit();
-  await commandAsA({ type: "castSpell", cardId: "spell_sit" });
+  for (let cast = 0; cast < 3 && match.status === "active"; cast += 1) {
+    await passUntilPlayerOneReadyForSit();
+    await commandAsA({ type: "castSpell", cardId: "spell_sit" });
+  }
 
   assert.equal(match.status, "finished");
   assert.equal(match.winnerId, playerA.user.id);
@@ -425,8 +429,10 @@ test("rewards are granted only once even after restart snapshot", async (t) => {
     }
     throw new Error("not ready");
   }
-  await readyForSit();
-  await command(authA, { type: "castSpell", cardId: "spell_sit" });
+  for (let i = 0; i < 3 && current.status === "active"; i += 1) {
+    await readyForSit();
+    await command(authA, { type: "castSpell", cardId: "spell_sit" });
+  }
 
   const snapshot = serializeStore(app.store);
   const restartedStore = createMemoryStore({ snapshot });
@@ -511,6 +517,9 @@ test("casual queue supports join, cancel, and match creation", async (t) => {
 test("players cannot queue without a valid active loadout", async (t) => {
   const app = createApp();
   const player = register(app, "queue-noloadout@example.com", "No Loadout");
+  for (const [id, loadout] of Array.from(app.store.loadouts.entries())) {
+    if (loadout.playerId === player.user.id) app.store.loadouts.delete(id);
+  }
   const { server, baseUrl } = await listen(app);
   t.after(() => server.close());
 
@@ -519,7 +528,7 @@ test("players cannot queue without a valid active loadout", async (t) => {
       method: "POST",
       headers: { authorization: `Bearer ${player.token}` }
     }),
-    /valid loadout/
+    /Starter Deck/
   );
 });
 
