@@ -8,6 +8,7 @@ test("server startup modules import with Linux-safe paths", () => {
     require("../src/data/cards");
     require("../src/data/packs");
     require("../src/data/quests");
+    require("../src/data/starterLoadouts");
     require("../src/store/memoryStore");
     require("../src/store/jsonStore");
     require("../src/app");
