@@ -196,11 +196,42 @@
 
   async function resetDevAccount(userId) {
     try {
-      await api("/admin/reset-dev-account", { method: "POST", body: { userId } });
+      const isSelf = userId === state.profile?.userId;
+      const confirmation = isSelf ? "RESET MY ACCOUNT" : `RESET USER ${userId}`;
+      const typed = prompt(`Type ${confirmation} to reset ${isSelf ? "your account" : "this user"}.`);
+      if (typed !== confirmation) {
+        setMessage("Reset cancelled.");
+        return;
+      }
+      await api(isSelf ? "/admin/reset-my-account" : "/admin/reset-user", {
+        method: "POST",
+        body: isSelf ? { confirmation: typed } : { userId, confirmation: typed }
+      });
       await refreshAccountData();
       await refreshAdminDebug();
       state.message = "Dev account reset with starter cards, coins, and a fresh Starter Deck.";
       render();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function resetAllPlayerData() {
+    const confirmation = "RESET ALL PLAYER DATA";
+    const typed = prompt(`Type ${confirmation} to delete all player accounts and progression.`);
+    if (typed !== confirmation) {
+      setMessage("Full reset cancelled.");
+      return;
+    }
+    try {
+      await api("/admin/reset-all-player-data", { method: "POST", body: { confirmation: typed } });
+      localStorage.removeItem("bababooey-token");
+      state.token = null;
+      state.profile = null;
+      state.adminDebug = null;
+      state.view = "home";
+      state.message = "All player data was reset. Create a fresh account to keep testing.";
+      renderAuth();
     } catch (error) {
       setMessage(error.message);
     }
@@ -963,7 +994,8 @@
     const page = el("div", "grid");
     page.appendChild(titleBar("Admin Debug", [
       iconButton("R", "Refresh", false, () => refreshAdminDebug().then(render)),
-      iconButton("M", "Reset Me", false, () => resetDevAccount(state.profile?.userId))
+      iconButton("M", "Reset Me", false, () => resetDevAccount(state.profile?.userId)),
+      iconButton("!", "Full Reset", false, () => resetAllPlayerData())
     ]));
     const debug = state.adminDebug;
     if (!debug) {
@@ -988,7 +1020,7 @@
     const userRows = el("div", "selected-list");
     debug.users.forEach((user) => {
       const row = el("div", "selected-row", `<strong>${escapeHtml(user.displayName)}</strong><span class="pill">${user.coins} coins</span><span class="pill">${user.loadoutCount} loadouts</span><span class="small">${escapeHtml(user.email)}</span>`);
-      row.appendChild(iconButton("R", "Reset", false, () => resetDevAccount(user.id)));
+      row.appendChild(iconButton("R", user.id === state.profile?.userId ? "Reset Me" : "Admin Reset User", false, () => resetDevAccount(user.id)));
       userRows.appendChild(row);
     });
     if (!debug.users.length) userRows.appendChild(el("div", "empty", "No users yet."));

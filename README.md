@@ -41,6 +41,8 @@ PORT=3000
 DATA_FILE=data/dev-store.json
 DATABASE_URL=
 PGSSL=true
+ENABLE_ADMIN_DEBUG=false
+ADMIN_USER_IDS=
 ```
 
 `DATABASE_URL` enables PostgreSQL. Without it, the server falls back to JSON mode.
@@ -63,6 +65,42 @@ On startup with PostgreSQL enabled, Render logs should include:
 Connected to PostgreSQL database: <database-name>
 Migration status: <n> applied, <n> already applied, <n> total.
 ```
+
+## Developer Reset Tools
+
+Use these only for development, beta cleanup, or a broken test account. Reset tools preserve game content: card catalog, packs, quest definitions, cores, and other static content.
+
+Reset your own account from the in-app Admin tab with **Reset Me**. You must type:
+
+```text
+RESET MY ACCOUNT
+```
+
+Admin-only reset of one user is available from the Admin tab or the CLI. In production, add your user id to `ADMIN_USER_IDS`.
+
+```powershell
+npm run reset:user -- <userId>
+```
+
+For non-interactive shells:
+
+```powershell
+npm run reset:user -- <userId> --confirm "RESET USER <userId>"
+```
+
+Full player-data reset deletes users, collections, loadouts, friends, friend requests, quests progress, match history, ratings, coin transactions, pack openings/rewards, event logs, sessions, bug reports, and error logs.
+
+```powershell
+npm run reset:all
+```
+
+For non-interactive shells:
+
+```powershell
+npm run reset:all -- --confirm "RESET ALL PLAYER DATA"
+```
+
+After a full reset, every player must register again.
 
 ## Deploy To Render With Neon
 
@@ -91,6 +129,7 @@ Migration status: <n> applied, <n> already applied, <n> total.
    - `DATABASE_URL` from Neon.
    - `PGSSL=true`
    - `ENABLE_ADMIN_DEBUG=false` normally, or `true` temporarily when checking `/debug/persistence`.
+   - `ADMIN_USER_IDS=<your-user-id>` for production admin reset tools.
 6. Health check path: `/health`.
 7. Deploy and watch logs for the PostgreSQL and migration messages above.
 

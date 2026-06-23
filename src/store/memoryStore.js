@@ -91,6 +91,73 @@ function seedStarterDeck(store, playerId, options = {}) {
   return loadout;
 }
 
+function removePlayerProgress(store, playerId) {
+  const profile = store.profiles.get(playerId);
+  if (!profile) {
+    const error = new Error("User not found.");
+    error.status = 404;
+    throw error;
+  }
+
+  const relatedMatchIds = new Set();
+  for (const match of store.onlineMatches.values()) {
+    if (match.playerIds?.includes(playerId)) relatedMatchIds.add(match.id);
+  }
+  for (const history of store.matchHistory) {
+    if (history.playerIds?.includes(playerId)) relatedMatchIds.add(history.matchId);
+  }
+
+  store.friendships = new Map(Array.from(store.friendships.entries()).filter(([, friendship]) => (
+    friendship.requesterId !== playerId && friendship.addresseeId !== playerId
+  )));
+  store.friendChallenges = new Map(Array.from(store.friendChallenges.entries()).filter(([, challenge]) => (
+    challenge.challengerId !== playerId && challenge.challengedId !== playerId
+  )));
+  store.onlineMatches = new Map(Array.from(store.onlineMatches.entries()).filter(([matchId, match]) => (
+    matchId !== playerId && !match.playerIds?.includes(playerId)
+  )));
+  store.onlineMatchEvents = store.onlineMatchEvents.filter((event) => !relatedMatchIds.has(event.matchId));
+  store.matchHistory = store.matchHistory.filter((history) => !history.playerIds?.includes(playerId));
+  store.coinTransactions = store.coinTransactions.filter((transaction) => transaction.playerId !== playerId);
+  store.packOpenings = store.packOpenings.filter((opening) => opening.playerId !== playerId);
+  store.playerQuests.delete(playerId);
+  store.rankedRatings.delete(playerId);
+  store.matchmakingQueues.casual = store.matchmakingQueues.casual.filter((entry) => entry.playerId !== playerId);
+  store.matchmakingQueues.ranked = store.matchmakingQueues.ranked.filter((entry) => entry.playerId !== playerId);
+}
+
+function resetProfileProgress(profile) {
+  profile.coins = STARTING_COINS;
+  profile.selectedCoreCardId = "core_starter";
+  profile.tutorialState = { freePacksOpened: 0 };
+  profile.freePacks = { starter_pack: 3 };
+  profile.updatedAt = nowIso();
+  return profile;
+}
+
+function clearAllPlayerState(store) {
+  store.users.clear();
+  store.usersByEmail.clear();
+  store.sessions.clear();
+  store.profiles.clear();
+  store.profilesByFriendCode.clear();
+  store.playerCards.clear();
+  store.loadouts.clear();
+  store.friendships.clear();
+  store.friendChallenges.clear();
+  store.rankedRatings.clear();
+  store.matchmakingQueues.casual = [];
+  store.matchmakingQueues.ranked = [];
+  store.onlineMatches.clear();
+  store.onlineMatchEvents = [];
+  store.matchHistory = [];
+  store.coinTransactions = [];
+  store.packOpenings = [];
+  store.playerQuests.clear();
+  store.errorLogs = [];
+  store.bugReports = [];
+}
+
 function hydrateStore(store, snapshot) {
   if (!snapshot) return;
   store.users = mapFromEntries(snapshot.users);
@@ -212,20 +279,33 @@ function createMemoryStore(options = {}) {
   };
 
   store.resetDevAccount = function resetDevAccount(playerId) {
+    return store.resetPlayerAccount(playerId);
+  };
+
+  store.resetPlayerAccount = function resetPlayerAccount(playerId) {
     const profile = store.profiles.get(playerId);
     if (!profile) {
       const error = new Error("User not found.");
       error.status = 404;
       throw error;
     }
-    seedStarterDeck(store, playerId, { resetCoins: true, replaceLoadouts: true });
-    store.playerQuests.delete(playerId);
-    store.rankedRatings.delete(playerId);
-    profile.freePacks = { starter_pack: 3 };
-    store.matchmakingQueues.casual = store.matchmakingQueues.casual.filter((entry) => entry.playerId !== playerId);
-    store.matchmakingQueues.ranked = store.matchmakingQueues.ranked.filter((entry) => entry.playerId !== playerId);
+    removePlayerProgress(store, playerId);
+    resetProfileProgress(profile);
+    seedStarterDeck(store, playerId, { replaceLoadouts: true });
     if (typeof store.persist === "function") store.persist();
     return profile;
+  };
+
+  store.resetAllPlayerData = function resetAllPlayerData() {
+    clearAllPlayerState(store);
+    if (typeof store.persist === "function") store.persist();
+    return {
+      users: store.users.size,
+      collections: store.playerCards.size,
+      loadouts: store.loadouts.size,
+      matches: store.onlineMatches.size,
+      transactions: store.coinTransactions.length
+    };
   };
 
   store.addCoinTransaction = function addCoinTransaction({ playerId, amount, reason, sourceId = null, metadata = {} }) {

@@ -153,6 +153,29 @@ function isDebugPersistenceEnabled() {
   return process.env.NODE_ENV !== "production" || process.env.ENABLE_ADMIN_DEBUG === "true";
 }
 
+function isAdminUser(userId) {
+  if (process.env.NODE_ENV !== "production" && process.env.ENABLE_ADMIN_DEBUG !== "false") return true;
+  const adminIds = (process.env.ADMIN_USER_IDS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return adminIds.includes(userId);
+}
+
+function requireAdmin(userId) {
+  if (isAdminUser(userId)) return;
+  const error = new Error("Admin access is required for this reset action.");
+  error.status = 403;
+  throw error;
+}
+
+function requireConfirmation(actual, expected) {
+  if (actual === expected) return;
+  const error = new Error(`Confirmation required. Type ${expected} to continue.`);
+  error.status = 400;
+  throw error;
+}
+
 function persistenceDebugSnapshot(store) {
   return {
     storeType: store.persistence?.type || "memory",
@@ -347,11 +370,57 @@ function createApp(options = {}) {
         return sendJson(res, 200, adminDebugSnapshot(store));
       }
 
+      if (path === "/admin/reset-my-account") {
+        if (req.method !== "POST") return methodNotAllowed(res);
+        const body = await readJson(req);
+        requireConfirmation(body.confirmation, "RESET MY ACCOUNT");
+        store.resetPlayerAccount(user.id);
+        return sendJson(res, 200, {
+          profile: services.profiles.get(user.id),
+          collection: services.collection.list(user.id),
+          loadouts: services.loadouts.list(user.id)
+        });
+      }
+
+      if (path === "/admin/reset-user") {
+        if (req.method !== "POST") return methodNotAllowed(res);
+        requireAdmin(user.id);
+        const body = await readJson(req);
+        if (!body.userId) {
+          const error = new Error("userId is required.");
+          error.status = 400;
+          throw error;
+        }
+        requireConfirmation(body.confirmation, `RESET USER ${body.userId}`);
+        store.resetPlayerAccount(body.userId);
+        return sendJson(res, 200, {
+          profile: services.profiles.get(body.userId),
+          collection: services.collection.list(body.userId),
+          loadouts: services.loadouts.list(body.userId)
+        });
+      }
+
+      if (path === "/admin/reset-all-player-data") {
+        if (req.method !== "POST") return methodNotAllowed(res);
+        requireAdmin(user.id);
+        const body = await readJson(req);
+        requireConfirmation(body.confirmation, "RESET ALL PLAYER DATA");
+        return sendJson(res, 200, {
+          reset: store.resetAllPlayerData()
+        });
+      }
+
       if (path === "/admin/reset-dev-account") {
         if (req.method !== "POST") return methodNotAllowed(res);
         const body = await readJson(req);
         const targetUserId = body.userId || user.id;
-        store.resetDevAccount(targetUserId);
+        if (targetUserId !== user.id) {
+          requireAdmin(user.id);
+          requireConfirmation(body.confirmation, `RESET USER ${targetUserId}`);
+        } else {
+          requireConfirmation(body.confirmation, "RESET MY ACCOUNT");
+        }
+        store.resetPlayerAccount(targetUserId);
         return sendJson(res, 200, {
           profile: services.profiles.get(targetUserId),
           collection: services.collection.list(targetUserId),
