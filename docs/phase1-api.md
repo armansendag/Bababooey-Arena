@@ -11,6 +11,8 @@ Authorization: Bearer <token>
 - `GET /health`
 - `POST /auth/register`
   - body: `{ "email": "...", "password": "...", "displayName": "..." }`
+  - creates a saved username/display name, 1000 coins, 3 free Starter Packs, 1 free Core, and one legal Beginner Starter loadout
+  - does not grant the full card catalog
 - `POST /auth/login`
   - body: `{ "email": "...", "password": "..." }`
 
@@ -55,9 +57,10 @@ Loadout rules:
 ## Packs
 
 - `GET /shop/packs`
+  - returns all launch packs with name, cost, card count, rarity odds, guaranteed slots, and description
 - `POST /shop/packs/:id/open`
 
-Pack opening charges coins, grants cards, converts copies beyond 10 to coins, and advances pack-related quests.
+Pack opening is server-side. It consumes a free pack entitlement first when available, otherwise charges coins, grants cards, converts only copies beyond 10 to coins, saves the opening, and advances pack-related quests.
 
 ## Quests
 

@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const { cards } = require("../data/cards");
 const { packs } = require("../data/packs");
 const { quests } = require("../data/quests");
-const { DEFAULT_STARTER_ARCHETYPE, STARTER_LOADOUTS } = require("../data/starterLoadouts");
+const { BEGINNER_LOADOUT } = require("../data/starterLoadouts");
 const { STARTING_COINS } = require("../domain/economy");
 
 function nowIso() {
@@ -47,12 +47,9 @@ function serializeStore(store) {
 }
 
 function starterCardMap() {
-  const owned = new Map([["core_starter", 1]]);
-  for (const loadout of Object.values(STARTER_LOADOUTS)) {
-    owned.set(loadout.coreCardId, 1);
-    for (const [cardId, quantity] of Object.entries(loadout.cards)) {
-      owned.set(cardId, Math.max(owned.get(cardId) || 0, quantity));
-    }
+  const owned = new Map([[BEGINNER_LOADOUT.coreCardId, 1]]);
+  for (const [cardId, quantity] of Object.entries(BEGINNER_LOADOUT.cards)) {
+    owned.set(cardId, quantity);
   }
   return owned;
 }
@@ -79,23 +76,19 @@ function seedStarterDeck(store, playerId, options = {}) {
     }
   }
 
-  const created = [];
-  for (const [archetype, starter] of Object.entries(STARTER_LOADOUTS)) {
-    const loadout = {
-      id: makeId(),
-      playerId,
-      name: starter.name,
-      archetype,
-      coreCardId: starter.coreCardId,
-      cards: { ...starter.cards },
-      isActive: archetype === DEFAULT_STARTER_ARCHETYPE,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-    store.loadouts.set(loadout.id, loadout);
-    created.push(loadout);
-  }
-  return created.find((loadout) => loadout.isActive) || created[0];
+  const loadout = {
+    id: makeId(),
+    playerId,
+    name: BEGINNER_LOADOUT.name,
+    archetype: "beginner",
+    coreCardId: BEGINNER_LOADOUT.coreCardId,
+    cards: { ...BEGINNER_LOADOUT.cards },
+    isActive: true,
+    createdAt: timestamp,
+    updatedAt: timestamp
+  };
+  store.loadouts.set(loadout.id, loadout);
+  return loadout;
 }
 
 function hydrateStore(store, snapshot) {
@@ -165,7 +158,8 @@ function createMemoryStore(options = {}) {
       friendCode,
       coins: STARTING_COINS,
       selectedCoreCardId: "core_starter",
-      tutorialState: {},
+      tutorialState: { freePacksOpened: 0 },
+      freePacks: { starter_pack: 3 },
       createdAt,
       updatedAt: createdAt
     };
@@ -227,6 +221,7 @@ function createMemoryStore(options = {}) {
     seedStarterDeck(store, playerId, { resetCoins: true, replaceLoadouts: true });
     store.playerQuests.delete(playerId);
     store.rankedRatings.delete(playerId);
+    profile.freePacks = { starter_pack: 3 };
     store.matchmakingQueues.casual = store.matchmakingQueues.casual.filter((entry) => entry.playerId !== playerId);
     store.matchmakingQueues.ranked = store.matchmakingQueues.ranked.filter((entry) => entry.playerId !== playerId);
     if (typeof store.persist === "function") store.persist();

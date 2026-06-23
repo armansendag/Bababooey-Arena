@@ -30,6 +30,7 @@ function sanitizeProfile(profile) {
     coins: profile.coins,
     selectedCoreCardId: profile.selectedCoreCardId,
     tutorialState: profile.tutorialState,
+    freePacks: profile.freePacks || {},
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt
   };

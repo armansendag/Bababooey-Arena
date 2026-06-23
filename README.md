@@ -2,6 +2,19 @@
 
 Bababooey Arena is a local and online card battler built on a deterministic server-authoritative battle engine.
 
+## New Player Progression
+
+New accounts start with:
+
+- 1000 coins
+- 3 free Starter Packs
+- 1 free Starter Core
+- 1 legal Beginner Starter loadout made from a small tutorial card pool
+
+New accounts do not receive the full card catalog and do not receive every archetype starter deck as owned cards. Collection progress comes from opening packs, earning rewards, and keeping copies over time. Players may own up to 10 copies of each card; only copy 11 and beyond converts to coins.
+
+The launch shop includes Starter Pack, Basic Pack, Rare Pack, Epic Pack, Mythic Pack, Chaos Pack, Archetype Pack, and Core Cache. Starter Packs only roll commons, uncommons, and rare cards.
+
 ## Run Locally
 
 Install dependencies, then start the server:
@@ -93,14 +106,15 @@ Use this checklist after a production deploy:
 
 1. Open `/health` and confirm `{ "ok": true }`.
 2. Register two accounts.
-3. Open packs and confirm coins/cards change.
-4. Build or activate loadouts.
-5. Add the two accounts as friends.
-6. Complete a ranked or casual match.
-7. Refresh both browsers and confirm the accounts remain logged in.
-8. Trigger a Render manual deploy or restart.
-9. Log back in and confirm coins, collection, loadouts, friends, match history, ranked rating, and rewards still exist.
-10. Temporarily set `ENABLE_ADMIN_DEBUG=true`, redeploy, log in, and open `/debug/persistence`.
+3. Open the three free Starter Packs and confirm cards are added without spending coins.
+4. Open a paid pack and confirm coins/cards change.
+5. Build or activate loadouts.
+6. Add the two accounts as friends.
+7. Complete a ranked or casual match.
+8. Refresh both browsers and confirm the accounts remain logged in.
+9. Trigger a Render manual deploy or restart.
+10. Log back in and confirm username, coins, collection, loadouts, friends, match history, ranked rating, and rewards still exist.
+11. Temporarily set `ENABLE_ADMIN_DEBUG=true`, redeploy, log in, and open `/debug/persistence`.
 
 `/debug/persistence` reports the active store type, database connection state, database name, migration status, and counts for users, collections, loadouts, friends, pack openings, matches, match history, ranked ratings, and coin transactions. Disable `ENABLE_ADMIN_DEBUG` again after checking production.
 

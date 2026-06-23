@@ -21,9 +21,20 @@ function createPackService(store, collectionService, questService, random = Math
     const pack = store.packs.get(packId);
     if (!pack) throw Object.assign(new Error("Pack not found."), { status: 404 });
     const profile = store.profiles.get(playerId);
-    if (profile.coins < pack.price) throw Object.assign(new Error("Insufficient coins."), { status: 400 });
+    const freePacks = profile.freePacks || {};
+    const usesFreePack = (freePacks[pack.id] || 0) > 0;
+    if (!usesFreePack && profile.coins < pack.price) throw Object.assign(new Error("Insufficient coins."), { status: 400 });
 
-    store.addCoinTransaction({ playerId, amount: -pack.price, reason: "pack_purchase", sourceId: pack.id });
+    if (usesFreePack) {
+      freePacks[pack.id] -= 1;
+      profile.freePacks = freePacks;
+      profile.tutorialState = {
+        ...(profile.tutorialState || {}),
+        freePacksOpened: (profile.tutorialState?.freePacksOpened || 0) + 1
+      };
+    } else {
+      store.addCoinTransaction({ playerId, amount: -pack.price, reason: "pack_purchase", sourceId: pack.id });
+    }
 
     const resultCards = [];
     let duplicateCoins = 0;
@@ -55,6 +66,7 @@ function createPackService(store, collectionService, questService, random = Math
       id: makeId(),
       playerId,
       packId,
+      free: usesFreePack,
       results: resultCards.map((result) => ({
         cardId: result.card.id,
         added: result.added,
@@ -70,7 +82,7 @@ function createPackService(store, collectionService, questService, random = Math
     }
     if (typeof store.persist === "function") store.persist();
 
-    return { opening, cards: resultCards, profile: store.profiles.get(playerId) };
+    return { opening, pack, cards: resultCards, profile: store.profiles.get(playerId) };
   }
 
   return { list, open };

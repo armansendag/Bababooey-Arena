@@ -80,9 +80,10 @@ function createDemoAccount(services, store) {
     displayName: "Prototype Pilot"
   });
 
-  for (const card of store.cards.values()) {
-    const owned = store.playerCards.get(account.user.id);
-    owned.set(card.id, card.type === "core" ? 1 : 3);
+  const owned = store.playerCards.get(account.user.id);
+  owned.set(DEMO_LOADOUT.coreCardId, 1);
+  for (const [cardId, quantity] of Object.entries(DEMO_LOADOUT.cards)) {
+    owned.set(cardId, Math.max(owned.get(cardId) || 0, quantity));
   }
   const loadout = services.loadouts.create(account.user.id, {
     name: "Prototype Online Loadout",

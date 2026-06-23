@@ -20,6 +20,7 @@ function createProfileService(store, authService) {
       profile.selectedCoreCardId = payload.selectedCoreCardId;
     }
     profile.updatedAt = nowIso();
+    if (typeof store.persist === "function") store.persist();
     return authService.sanitizeProfile(profile);
   }
 

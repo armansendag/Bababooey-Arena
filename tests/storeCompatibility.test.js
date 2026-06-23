@@ -26,6 +26,7 @@ test("snapshot store preserves every production persistence domain", () => {
   const playerA = register(app, "phase7a-alpha@example.com", "Phase Seven Alpha");
   const playerB = register(app, "phase7a-bravo@example.com", "Phase Seven Bravo");
   app.services.friends.sendRequest(playerA.user.id, playerB.profile.friendCode);
+  app.store.profiles.get(playerA.user.id).freePacks = {};
   app.services.packs.open(playerA.user.id, "starter_pack");
   app.services.quests.recordProgress(playerA.user.id, "play_game", 1);
   app.services.onlineMatches.joinQueue(playerA.user.id, "casual");
@@ -39,7 +40,7 @@ test("snapshot store preserves every production persistence domain", () => {
   assert.equal(restored.profiles.size, 2);
   assert.equal(restored.sessions.size, 2);
   assert.equal(restored.playerCards.size, 2);
-  assert.equal(restored.loadouts.size, 14);
+  assert.equal(restored.loadouts.size, 2);
   assert.equal(restored.friendChallenges.size, 0);
   assert.equal(restored.friendships.size, 1);
   assert.equal(restored.playerQuests.size > 0, true);

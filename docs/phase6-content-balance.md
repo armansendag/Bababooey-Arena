@@ -76,6 +76,19 @@ New accounts receive all seven starter loadouts and enough owned copies to play 
 
 Packs live in `src/data/packs.js`.
 
+The launch shop includes:
+
+- Starter Pack
+- Basic Pack
+- Rare Pack
+- Epic Pack
+- Mythic Pack
+- Chaos Pack
+- Archetype Pack
+- Core Cache
+
+Starter Packs are intentionally low-rarity: commons and uncommons are the main outcome, rares are uncommon, and epics/legendaries/mythics/bababooeys are excluded.
+
 | Pack | Price | Cards | Notes |
 | --- | ---: | ---: | --- |
 | Starter Pack | 200 | 6 | Better early collection growth with uncommon/rare guarantees |

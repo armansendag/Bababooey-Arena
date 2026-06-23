@@ -6,6 +6,12 @@
     view: "home",
     token: null,
     profile: null,
+    authMode: "register",
+    authForm: {
+      email: "",
+      password: "",
+      displayName: ""
+    },
     cards: [],
     collection: [],
     quests: [],
@@ -507,19 +513,19 @@
     page.appendChild(titleBar("Home"));
     page.appendChild(el("section", "hero", `
       <h1>Battlefield: Codex</h1>
-      <p>Your account starts with a legal Starter Deck, so you can jump into a local battle, challenge a friend, or queue for casual/ranked immediately.</p>
+      <p>Your account starts with a legal beginner deck, 1000 coins, and three free Starter Packs. Build the rest over time.</p>
     `));
     const onboarding = el("section", "section onboarding-panel");
     onboarding.innerHTML = `
       <h2>First Match Checklist</h2>
       <div class="onboarding-steps">
-        <div><strong>1. Check your deck</strong><span class="small">Open Loadouts to inspect or tweak the active Starter Deck.</span></div>
-        <div><strong>2. Connect online</strong><span class="small">Open Online, connect the socket, then challenge a friend or queue.</span></div>
+        <div><strong>1. Open packs</strong><span class="small">Use your three free Starter Packs, then spend coins carefully.</span></div>
+        <div><strong>2. Check your deck</strong><span class="small">Your beginner loadout is legal, but your collection starts small.</span></div>
         <div><strong>3. Play the turn</strong><span class="small">Spend mana, summon troops, attack valid targets, then press E to end turn.</span></div>
       </div>
     `;
+    onboarding.appendChild(iconButton("P", "Open Packs", false, () => setView("packs")));
     onboarding.appendChild(iconButton("L", "Open Loadouts", false, () => setView("loadout")));
-    onboarding.appendChild(iconButton("O", "Open Online", false, () => setView("online")));
     page.appendChild(onboarding);
     const stats = el("div", "grid three");
     stats.appendChild(el("section", "section", `<h2>Profile</h2><div class="pill-row"><span class="pill">${escapeHtml(state.profile?.displayName || "Demo")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`));
@@ -704,10 +710,34 @@
     const page = el("div", "grid");
     page.appendChild(titleBar("Pack Opening"));
     const stage = el("section", "section pack-stage");
-    stage.appendChild(el("h2", "", "Starter Pack"));
-    stage.appendChild(el("p", "small", "Open packs locally, update your collection, and convert copies beyond 10 into coins."));
-    stage.appendChild(iconButton("O", "Open Pack", !state.packs.length || (state.profile?.coins || 0) < state.packs[0].price, openPack));
+    stage.appendChild(el("h2", "", "Pack Shop"));
+    stage.appendChild(el("p", "small", "Packs are rolled server-side. Copies 1-10 stay in your collection; only copy 11+ converts to coins."));
+    const packGrid = el("div", "grid two");
+    state.packs.forEach((pack) => {
+      const freeCount = state.profile?.freePacks?.[pack.id] || 0;
+      const canOpen = freeCount > 0 || (state.profile?.coins || 0) >= pack.price;
+      const packNode = el("section", "queue-card");
+      const odds = (pack.dropTable || []).map((entry) => `${entry.rarity}: ${entry.weight}`).join(" / ");
+      const guarantees = (pack.guaranteedSlots || []).length
+        ? pack.guaranteedSlots.map((slot) => slot.rarity ? `${slot.rarity} slot` : `${slot.type} slot`).join(", ")
+        : "None";
+      packNode.innerHTML = `
+        <h3>${escapeHtml(pack.name)}</h3>
+        <p>${escapeHtml(pack.description || "")}</p>
+        <div class="pill-row">
+          <span class="pill">${pack.price} coins</span>
+          <span class="pill">${pack.cardsPerPack} cards</span>
+          ${freeCount ? `<span class="pill">${freeCount} free</span>` : ""}
+        </div>
+        <div class="small">Odds: ${escapeHtml(odds)}</div>
+        <div class="small">Guaranteed: ${escapeHtml(guarantees)}</div>
+      `;
+      packNode.appendChild(iconButton("O", freeCount ? "Open Free Pack" : "Open Pack", !canOpen, () => openPack(pack.id)));
+      packGrid.appendChild(packNode);
+    });
+    stage.appendChild(packGrid);
     if (state.packReveal) {
+      stage.appendChild(el("h2", "", `${escapeHtml(state.packReveal.pack?.name || "Pack")} Results`));
       const row = el("div", "reveal-row");
       state.packReveal.cards.forEach((result, index) => {
         const node = renderCard(result.card);
@@ -721,8 +751,8 @@
     shell(page);
   }
 
-  function openPack() {
-    api(`/shop/packs/${state.packs[0].id}/open`, { method: "POST" })
+  function openPack(packId) {
+    api(`/shop/packs/${packId}/open`, { method: "POST" })
       .then(async (result) => {
         state.packReveal = result;
         await refreshAccountData();
@@ -730,6 +760,61 @@
         render();
       })
       .catch((error) => setMessage(error.message));
+  }
+
+  function renderAuth() {
+    app.innerHTML = "";
+    const page = el("main", "main");
+    const panel = el("section", "section");
+    panel.innerHTML = `
+      <h1>Bababooey Arena</h1>
+      <p class="small">Create an account or log in. Your username, collection, coins, loadouts, and match history are saved.</p>
+      <div class="grid">
+        <input data-auth="email" placeholder="Email" value="${escapeHtml(state.authForm.email)}">
+        <input data-auth="password" placeholder="Password" type="password" value="${escapeHtml(state.authForm.password)}">
+        ${state.authMode === "register" ? `<input data-auth="displayName" placeholder="Username" value="${escapeHtml(state.authForm.displayName)}">` : ""}
+      </div>
+      <div class="toolbar" style="margin-top: 12px;">
+        <button data-auth-submit>${state.authMode === "register" ? "Create Account" : "Log In"}</button>
+        <button data-auth-toggle>${state.authMode === "register" ? "I already have an account" : "Create a new account"}</button>
+      </div>
+    `;
+    panel.querySelectorAll("[data-auth]").forEach((input) => {
+      input.addEventListener("input", () => {
+        state.authForm[input.getAttribute("data-auth")] = input.value;
+      });
+    });
+    panel.querySelector("[data-auth-submit]").addEventListener("click", submitAuth);
+    panel.querySelector("[data-auth-toggle]").addEventListener("click", () => {
+      state.authMode = state.authMode === "register" ? "login" : "register";
+      renderAuth();
+    });
+    page.appendChild(panel);
+    if (state.message) page.appendChild(el("section", "section", `<strong>${escapeHtml(state.message)}</strong>`));
+    app.appendChild(page);
+  }
+
+  async function submitAuth() {
+    try {
+      const endpoint = state.authMode === "register" ? "/auth/register" : "/auth/login";
+      const payload = {
+        email: state.authForm.email,
+        password: state.authForm.password
+      };
+      if (state.authMode === "register") payload.displayName = state.authForm.displayName;
+      const account = await api(endpoint, { method: "POST", body: payload });
+      state.token = account.token;
+      localStorage.setItem("bababooey_token", account.token);
+      await refreshAccountData();
+      connectOnlineSocket();
+      await startMatch({ navigate: false });
+      state.view = "home";
+      autoFillLoadout();
+      render();
+    } catch (error) {
+      setMessage(error.message);
+      renderAuth();
+    }
   }
 
   function renderQuests() {
@@ -1421,12 +1506,7 @@
           localStorage.removeItem("bababooey_token");
         }
       }
-      if (!state.token) {
-        const account = await api("/prototype/bootstrap", { method: "POST" });
-        state.token = account.token;
-        localStorage.setItem("bababooey_token", account.token);
-        await refreshAccountData();
-      }
+      if (!state.token) return renderAuth();
       connectOnlineSocket();
       const savedMatchId = localStorage.getItem("bababooey_online_match_id");
       if (savedMatchId) {

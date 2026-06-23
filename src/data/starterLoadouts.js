@@ -1,5 +1,20 @@
 "use strict";
 
+const BEGINNER_LOADOUT = {
+  name: "Beginner Starter",
+  coreCardId: "core_starter",
+  cards: {
+    troop_beast_pouncing_cub: 3,
+    troop_beast_fang_pup: 3,
+    troop_tech_socket_runner: 3,
+    troop_memeborn_tiny_goofball: 3,
+    troop_neutral_frontline_recruit: 2,
+    troop_neutral_banner_squire: 2,
+    spell_quick_jab: 2,
+    enchant_hunting_ground: 2
+  }
+};
+
 const STARTER_LOADOUTS = {
   aggro: {
     name: "Aggro Starter",
@@ -114,6 +129,6 @@ const STARTER_LOADOUTS = {
   }
 };
 
-const DEFAULT_STARTER_ARCHETYPE = "aggro";
+const DEFAULT_STARTER_ARCHETYPE = "beginner";
 
-module.exports = { DEFAULT_STARTER_ARCHETYPE, STARTER_LOADOUTS };
+module.exports = { BEGINNER_LOADOUT, DEFAULT_STARTER_ARCHETYPE, STARTER_LOADOUTS };

@@ -136,5 +136,5 @@ test("debug persistence endpoint reports store type and domain counts", async (t
   assert.equal(payload.databaseConnected, true);
   assert.equal(payload.counts.users, 1);
   assert.equal(payload.counts.collections, 1);
-  assert.equal(payload.counts.loadouts, 7);
+  assert.equal(payload.counts.loadouts, 1);
 });

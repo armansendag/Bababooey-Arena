@@ -18,3 +18,14 @@ test("battle end turn control stays reachable and supports E keybind", () => {
   assert.match(cssSource, /\.battle-action-bar\s*\{/);
   assert.match(cssSource, /position:\s*sticky/);
 });
+
+test("frontend asks for username and renders full pack shop", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /placeholder="Username"/);
+  assert.match(appSource, /\/auth\/register/);
+  assert.doesNotMatch(appSource, /\/prototype\/bootstrap", \{ method: "POST" \}/);
+  assert.match(appSource, /state\.packs\.forEach/);
+  assert.match(appSource, /Odds:/);
+  assert.match(appSource, /Guaranteed:/);
+});
