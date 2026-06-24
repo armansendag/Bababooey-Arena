@@ -55,6 +55,7 @@ function allocateUsername(store, requested) {
 }
 
 function sanitizeProfile(profile) {
+  const settings = profile.settings || {};
   return {
     userId: profile.userId,
     username: profile.username || profile.displayName,
@@ -65,6 +66,9 @@ function sanitizeProfile(profile) {
     coins: profile.coins,
     selectedCoreCardId: profile.selectedCoreCardId,
     tutorialState: profile.tutorialState,
+    settings: {
+      font: settings.font || "default"
+    },
     freePacks: profile.freePacks || {},
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt

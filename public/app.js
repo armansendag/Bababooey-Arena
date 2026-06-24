@@ -2,6 +2,19 @@
   "use strict";
 
   const app = document.getElementById("app");
+  const FONT_OPTIONS = [
+    ["default", "Default", "Arial, Helvetica, sans-serif"],
+    ["inter", "Inter", "Inter, Arial, Helvetica, sans-serif"],
+    ["roboto", "Roboto", "Roboto, Arial, Helvetica, sans-serif"],
+    ["open_sans", "Open Sans", "\"Open Sans\", Arial, Helvetica, sans-serif"],
+    ["montserrat", "Montserrat", "Montserrat, Arial, Helvetica, sans-serif"],
+    ["poppins", "Poppins", "Poppins, Arial, Helvetica, sans-serif"],
+    ["nunito", "Nunito", "Nunito, Arial, Helvetica, sans-serif"],
+    ["merriweather", "Merriweather", "Merriweather, Georgia, serif"],
+    ["comic_sans", "Comic Sans", "\"Comic Sans MS\", \"Comic Sans\", cursive, Arial, sans-serif"],
+    ["pixel_retro", "Pixel/Retro", "\"Courier New\", Consolas, monospace"]
+  ];
+  const FONT_MAP = new Map(FONT_OPTIONS.map(([id, label, stack]) => [id, { id, label, stack }]));
   const state = {
     view: "home",
     token: null,
@@ -53,7 +66,8 @@
     settings: {
       sound: false,
       animationSpeed: "normal",
-      reducedMotion: false
+      reducedMotion: false,
+      font: localStorage.getItem("bababooey_font") || "default"
     }
   };
 
@@ -284,6 +298,23 @@
     return `motion-${state.settings.animationSpeed}${state.settings.reducedMotion ? " reduce-motion" : ""}`;
   }
 
+  function normalizeFont(fontId) {
+    return FONT_MAP.has(fontId) ? fontId : "default";
+  }
+
+  function currentFont() {
+    const fontId = normalizeFont(state.settings.font);
+    return FONT_MAP.get(fontId);
+  }
+
+  function applyFontPreference(fontId = state.settings.font) {
+    const safeFont = normalizeFont(fontId);
+    state.settings.font = safeFont;
+    document.documentElement.style.setProperty("--ui-font", FONT_MAP.get(safeFont).stack);
+    localStorage.setItem("bababooey_font", safeFont);
+    return safeFont;
+  }
+
   function el(tag, className, html) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -426,9 +457,22 @@
   function settingsOverlay() {
     const wrapper = el("div", "modal-backdrop");
     const panel = el("section", "modal-panel settings-panel");
+    const selectedFont = currentFont();
     panel.innerHTML = `
       <h2>Settings</h2>
       <label class="setting-row"><span>Username<span class="small">3-16 letters, numbers, or underscores. Changes are limited to once every 30 days.</span></span><input data-username-edit value="${escapeHtml(state.profile?.username || state.profile?.displayName || "")}"></label>
+      <div class="setting-row">
+        <span>Font<span class="small">Current: ${escapeHtml(selectedFont.label)}</span></span>
+        <select data-font-select>
+          ${FONT_OPTIONS.map(([id, label]) => `<option value="${escapeHtml(id)}" ${state.settings.font === id ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="font-preview" data-font-preview>
+        <strong>Sample Card Name</strong>
+        <div class="stats"><span class="stat">ATK 4</span><span class="stat">DEF 2</span><span class="stat">HP 7</span></div>
+        <span class="small">Sample game text: Clear enemy troops before striking the Core.</span>
+      </div>
+      <div class="toolbar"><button data-reset-font>Reset Font to Default</button></div>
       <label class="setting-row"><span>Sound</span><input type="checkbox" data-setting="sound" ${state.settings.sound ? "checked" : ""}></label>
       <label class="setting-row"><span>Reduced motion</span><input type="checkbox" data-setting="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label>
       <label class="setting-row"><span>Animation speed</span><select data-setting="animationSpeed">
@@ -449,6 +493,8 @@
     usernameInput.addEventListener("keydown", (event) => {
       if (event.key === "Enter") updateUsername(usernameInput.value);
     });
+    panel.querySelector("[data-font-select]").addEventListener("change", (event) => updateFontPreference(event.target.value));
+    panel.querySelector("[data-reset-font]").addEventListener("click", () => updateFontPreference("default"));
     panel.appendChild(el("div", "setting-row danger-zone", `
       <span><strong>Reset my stats</strong><span class="small">Coins, collection, loadouts, quests, ratings, friends, and match history reset to starter state.</span></span>
       <button data-reset-stats>Reset</button>
@@ -501,6 +547,22 @@
       render();
     } catch (error) {
       setMessage(error.message);
+    }
+  }
+
+  async function updateFontPreference(fontId) {
+    const safeFont = applyFontPreference(fontId);
+    try {
+      if (state.token) {
+        state.profile = await api("/me", { method: "PATCH", body: { settings: { font: safeFont } } });
+        state.settings.font = normalizeFont(state.profile?.settings?.font);
+        applyFontPreference(state.settings.font);
+      }
+      state.message = `Font set to ${currentFont().label}.`;
+      render();
+    } catch (error) {
+      setMessage(error.message);
+      render();
     }
   }
 
@@ -1517,6 +1579,8 @@
       api("/shop/packs")
     ]);
     state.profile = profile;
+    state.settings.font = normalizeFont(profile.settings?.font || state.settings.font);
+    applyFontPreference(state.settings.font);
     state.cards = cards;
     state.collection = collection;
     state.quests = quests;
@@ -1526,6 +1590,7 @@
 
   async function boot() {
     try {
+      applyFontPreference(state.settings.font);
       const savedToken = localStorage.getItem("bababooey_token");
       if (savedToken) {
         state.token = savedToken;

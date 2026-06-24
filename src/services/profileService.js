@@ -4,6 +4,23 @@ const { nowIso } = require("../store/memoryStore");
 const { normalizeUsername, validateUsername } = require("./authService");
 
 const USERNAME_CHANGE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+const SUPPORTED_FONTS = new Set([
+  "default",
+  "inter",
+  "roboto",
+  "open_sans",
+  "montserrat",
+  "poppins",
+  "nunito",
+  "merriweather",
+  "comic_sans",
+  "pixel_retro"
+]);
+
+function normalizeFontPreference(font) {
+  const value = String(font || "default").trim().toLowerCase();
+  return SUPPORTED_FONTS.has(value) ? value : "default";
+}
 
 function createProfileService(store, authService) {
   function get(userId) {
@@ -47,6 +64,12 @@ function createProfileService(store, authService) {
       }
       profile.selectedCoreCardId = payload.selectedCoreCardId;
     }
+    if (payload.settings && typeof payload.settings === "object") {
+      profile.settings = {
+        ...(profile.settings || {}),
+        font: normalizeFontPreference(payload.settings.font)
+      };
+    }
     profile.updatedAt = nowIso();
     if (typeof store.persist === "function") store.persist();
     return authService.sanitizeProfile(profile);
@@ -55,4 +78,4 @@ function createProfileService(store, authService) {
   return { get, update };
 }
 
-module.exports = { USERNAME_CHANGE_COOLDOWN_MS, createProfileService };
+module.exports = { SUPPORTED_FONTS, USERNAME_CHANGE_COOLDOWN_MS, createProfileService, normalizeFontPreference };

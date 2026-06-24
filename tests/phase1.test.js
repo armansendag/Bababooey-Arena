@@ -112,6 +112,20 @@ test("username change works and then respects cooldown", () => {
   assert.equal(app.services.profiles.update(player.user.id, { username: "Renamed_2" }).username, "Renamed_2");
 });
 
+test("font preference persists on the account and unsupported fonts fall back", () => {
+  const app = createApp();
+  const player = register(app, "font@example.com", "FontUser");
+
+  const updated = app.services.profiles.update(player.user.id, { settings: { font: "poppins" } });
+  assert.equal(updated.settings.font, "poppins");
+
+  const restored = createMemoryStore({ snapshot: serializeStore(app.store) });
+  assert.equal(restored.profiles.get(player.user.id).settings.font, "poppins");
+
+  const fallback = app.services.profiles.update(player.user.id, { settings: { font: "layout_destroyer" } });
+  assert.equal(fallback.settings.font, "default");
+});
+
 test("friends can be found by username or friend code", () => {
   const app = createApp();
   const playerA = register(app, "friend-a@example.com", "FriendA");

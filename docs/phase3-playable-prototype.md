@@ -85,7 +85,7 @@ The local/offline prototype now includes a more game-like battle presentation:
 - match-start screen with both players, Cores, and loadout previews
 - match-end screen with winner, rewards preview, and event summary
 - tutorial overlay for mana, cooldowns, troops, spells, enchantments, Core HP, and ending turns
-- settings overlay for sound, animation speed, and reduced motion
+- settings overlay for sound, animation speed, reduced motion, and account-saved UI font selection
 - targeting guide, highlighted valid targets, and selected attacker/spell state
 - combat feedback for attacks, damage numbers, core hits, defeats, and enchantment breaks
 - responsive desktop/mobile layout improvements

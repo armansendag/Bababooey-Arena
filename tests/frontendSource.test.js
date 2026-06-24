@@ -114,3 +114,23 @@ test("settings exposes self-service stat reset only", () => {
   assert.match(appSource, /RESET MY STATS/);
   assert.match(cssSource, /\.danger-zone/);
 });
+
+test("settings exposes font picker with immediate apply and persistence", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  for (const font of ["Inter", "Roboto", "Open Sans", "Montserrat", "Poppins", "Nunito", "Merriweather", "Comic Sans", "Pixel/Retro"]) {
+    assert.match(appSource, new RegExp(font.replace("/", "\\/")));
+  }
+  assert.match(appSource, /data-font-select/);
+  assert.match(appSource, /data-reset-font/);
+  assert.match(appSource, /data-font-preview/);
+  assert.match(appSource, /function applyFontPreference/);
+  assert.match(appSource, /document\.documentElement\.style\.setProperty\("--ui-font"/);
+  assert.match(appSource, /localStorage\.setItem\("bababooey_font"/);
+  assert.match(appSource, /api\("\/me", \{ method: "PATCH", body: \{ settings: \{ font: safeFont \} \} \}\)/);
+  assert.match(appSource, /normalizeFont\(fontId\)/);
+  assert.match(cssSource, /--ui-font/);
+  assert.match(cssSource, /font-family:\s*var\(--ui-font\)/);
+  assert.match(cssSource, /\.font-preview/);
+});

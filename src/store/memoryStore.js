@@ -59,6 +59,7 @@ function rebuildUsernameIndex(store) {
       profile.username = username;
       profile.normalizedUsername = normalizedUsername;
       profile.displayName = username;
+      profile.settings = { font: "default", ...(profile.settings || {}) };
       if (!Object.prototype.hasOwnProperty.call(profile, "usernameLastChangedAt")) profile.usernameLastChangedAt = user.usernameLastChangedAt || null;
     }
     store.usersByUsername.set(normalizedUsername, user);
@@ -177,6 +178,7 @@ function resetProfileProgress(profile) {
   profile.coins = STARTING_COINS;
   profile.selectedCoreCardId = "core_starter";
   profile.tutorialState = { freePacksOpened: 0 };
+  profile.settings = { font: "default", ...(profile.settings || {}) };
   profile.freePacks = { starter_pack: 3 };
   profile.updatedAt = nowIso();
   return profile;
@@ -291,6 +293,7 @@ function createMemoryStore(options = {}) {
       coins: STARTING_COINS,
       selectedCoreCardId: "core_starter",
       tutorialState: { freePacksOpened: 0 },
+      settings: { font: "default" },
       freePacks: { starter_pack: 3 },
       createdAt,
       updatedAt: createdAt
