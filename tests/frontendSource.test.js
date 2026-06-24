@@ -43,3 +43,12 @@ test("pack openings render exciting on-screen rarity reveals", () => {
   assert.match(cssSource, /\.pack-result-card\.slam-reveal/);
   assert.match(cssSource, /\.rarity-badge/);
 });
+
+test("loadout builder only shows and autofills owned cards", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /ownedLoadoutCards = state\.collection\.filter\(\(item\) => item\.type !== "core" && item\.ownedCount > 0\)/);
+  assert.match(appSource, /ownedLoadoutCards\.forEach/);
+  assert.match(appSource, /No owned non-core cards yet/);
+  assert.match(appSource, /\.filter\(\(\[cardId\]\) => \(owned\.get\(cardId\) \|\| 0\) > 0\)/);
+});

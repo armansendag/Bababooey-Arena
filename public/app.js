@@ -661,8 +661,8 @@
   }
 
   function autoFillLoadout() {
-    state.loadoutCoreCardId = "core_starter";
-    state.loadoutDraft = {
+    const owned = new Map(state.collection.map((item) => [item.id, item.ownedCount || 0]));
+    const starterDraft = {
       troop_mana_goblin: 3,
       troop_mana_slime: 3,
       troop_mana_golem: 2,
@@ -675,6 +675,12 @@
       spell_disenchant: 1,
       enchant_mana_spring: 1
     };
+    state.loadoutCoreCardId = owned.get("core_starter") > 0 ? "core_starter" : state.collection.find((item) => item.type === "core" && item.ownedCount > 0)?.id || "core_starter";
+    state.loadoutDraft = Object.fromEntries(
+      Object.entries(starterDraft)
+        .filter(([cardId]) => (owned.get(cardId) || 0) > 0)
+        .map(([cardId, quantity]) => [cardId, Math.min(quantity, owned.get(cardId) || 0)])
+    );
     validateDraft();
   }
 
@@ -692,7 +698,8 @@
     const cardPanel = el("section", "section");
     cardPanel.appendChild(el("h2", "", "Available Cards"));
     const grid = el("div", "card-grid");
-    state.collection.filter((item) => item.type !== "core").forEach((item) => {
+    const ownedLoadoutCards = state.collection.filter((item) => item.type !== "core" && item.ownedCount > 0);
+    ownedLoadoutCards.forEach((item) => {
       grid.appendChild(renderCard(item, {
         actions: [
           iconButton("-", "", draftCount(item.id) === 0, (event) => {
@@ -707,6 +714,7 @@
         ]
       }));
     });
+    if (!ownedLoadoutCards.length) grid.appendChild(el("div", "empty", "No owned non-core cards yet. Open packs to expand your loadout options."));
     cardPanel.appendChild(grid);
 
     const selected = el("section", "section");
