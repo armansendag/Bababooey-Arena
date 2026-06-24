@@ -29,3 +29,17 @@ test("frontend asks for username and renders full pack shop", () => {
   assert.match(appSource, /Odds:/);
   assert.match(appSource, /Guaranteed:/);
 });
+
+test("pack openings render exciting on-screen rarity reveals", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /pack-reveal-stage/);
+  assert.match(appSource, /Best pull:/);
+  assert.match(appSource, /pack-result-card/);
+  assert.match(appSource, /slam-reveal/);
+  assert.match(appSource, /rarity-badge/);
+  assert.match(cssSource, /@keyframes slamReveal/);
+  assert.match(cssSource, /\.pack-result-card\.slam-reveal/);
+  assert.match(cssSource, /\.rarity-badge/);
+});

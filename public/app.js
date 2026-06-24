@@ -498,6 +498,9 @@
   function renderCard(cardData, options = {}) {
     const disabled = options.disabled ? "disabled" : "";
     const node = el("div", `game-card ${cardData.rarity || "common"} ${options.selected ? "selected" : ""} ${disabled}`);
+    if (options.reveal) node.classList.add("pack-result-card");
+    if (options.reveal && rarityRank(cardData.rarity) >= rarityRank("rare")) node.classList.add("big-reveal");
+    if (options.reveal && rarityRank(cardData.rarity) >= rarityRank("epic")) node.classList.add("slam-reveal");
     const stats = [];
     if (cardData.attack !== undefined) stats.push(`<span class="stat">ATK ${cardData.attack}</span>`);
     if (cardData.defense !== undefined) stats.push(`<span class="stat">DEF ${cardData.defense}</span>`);
@@ -505,11 +508,12 @@
     stats.push(`<span class="stat">CD ${cardData.cooldown}</span>`);
     node.innerHTML = `
       <div class="rarity-frame"></div>
+      <div class="rarity-badge">${escapeHtml(cardData.rarity || "common")}</div>
       <div class="card-head">
         <div class="mana">${cardData.manaCost}</div>
         <div>
           <div class="card-name">${escapeHtml(cardData.name)}</div>
-          <div class="label"><span class="type-icon">${typeIcon(cardData.type)}</span> ${escapeHtml(cardData.rarity)} ${escapeHtml(cardData.type)}</div>
+          <div class="label"><span class="type-icon">${typeIcon(cardData.type)}</span> ${escapeHtml(cardData.type)}</div>
         </div>
       </div>
       <div class="faction-label">${escapeHtml(cardData.faction || "neutral")}</div>
@@ -740,6 +744,36 @@
   function renderPacks() {
     const page = el("div", "grid");
     page.appendChild(titleBar("Pack Opening"));
+    if (state.packReveal) {
+      const reveal = el("section", "section pack-reveal-stage");
+      const best = state.packReveal.cards
+        .map((result) => result.card)
+        .sort((a, b) => rarityRank(b.rarity) - rarityRank(a.rarity))[0];
+      reveal.innerHTML = `
+        <div class="pack-reveal-header">
+          <div>
+            <h2>${escapeHtml(state.packReveal.pack?.name || "Pack")} Results</h2>
+            <p class="small">${best ? `Best pull: ${escapeHtml(best.rarity)} ${escapeHtml(best.name)}` : "Cards added to your collection."}</p>
+          </div>
+          <div class="pill-row">
+            <span class="pill">${state.packReveal.opening?.free ? "Free pack" : `${state.packReveal.pack?.price || 0} coins`}</span>
+            <span class="pill">${state.packReveal.opening?.duplicateCoins || 0} duplicate coins</span>
+          </div>
+        </div>
+      `;
+      const row = el("div", "reveal-row pack-results-grid");
+      state.packReveal.cards.forEach((result, index) => {
+        const node = renderCard(result.card, { reveal: true });
+        node.style.animationDelay = `${index * 120}ms`;
+        const resultNote = result.added
+          ? `Added to collection (x${result.ownedCount})`
+          : `Duplicate converted: +${result.duplicateCoins} coins`;
+        node.appendChild(el("div", "pack-card-result", escapeHtml(resultNote)));
+        row.appendChild(node);
+      });
+      reveal.appendChild(row);
+      page.appendChild(reveal);
+    }
     const stage = el("section", "section pack-stage");
     stage.appendChild(el("h2", "", "Pack Shop"));
     stage.appendChild(el("p", "small", "Packs are rolled server-side. Copies 1-10 stay in your collection; only copy 11+ converts to coins."));
@@ -767,17 +801,6 @@
       packGrid.appendChild(packNode);
     });
     stage.appendChild(packGrid);
-    if (state.packReveal) {
-      stage.appendChild(el("h2", "", `${escapeHtml(state.packReveal.pack?.name || "Pack")} Results`));
-      const row = el("div", "reveal-row");
-      state.packReveal.cards.forEach((result, index) => {
-        const node = renderCard(result.card);
-        node.classList.add("reveal");
-        node.style.animationDelay = `${index * 80}ms`;
-        row.appendChild(node);
-      });
-      stage.appendChild(row);
-    }
     page.appendChild(stage);
     shell(page);
   }
