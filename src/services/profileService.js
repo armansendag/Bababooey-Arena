@@ -18,8 +18,8 @@ const SUPPORTED_FONTS = new Set([
 ]);
 
 function normalizeFontPreference(font) {
-  const value = String(font || "default").trim().toLowerCase();
-  return SUPPORTED_FONTS.has(value) ? value : "default";
+  const value = String(font || "poppins").trim().toLowerCase();
+  return SUPPORTED_FONTS.has(value) ? value : "poppins";
 }
 
 function createProfileService(store, authService) {

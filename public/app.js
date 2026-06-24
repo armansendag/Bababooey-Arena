@@ -3,7 +3,7 @@
 
   const app = document.getElementById("app");
   const FONT_OPTIONS = [
-    ["default", "Default", "Arial, Helvetica, sans-serif"],
+    ["default", "Default (Poppins)", "Poppins, Arial, Helvetica, sans-serif"],
     ["inter", "Inter", "Inter, Arial, Helvetica, sans-serif"],
     ["roboto", "Roboto", "Roboto, Arial, Helvetica, sans-serif"],
     ["open_sans", "Open Sans", "\"Open Sans\", Arial, Helvetica, sans-serif"],
@@ -67,7 +67,7 @@
       sound: false,
       animationSpeed: "normal",
       reducedMotion: false,
-      font: localStorage.getItem("bababooey_font") || "default"
+      font: localStorage.getItem("bababooey_font") || "poppins"
     }
   };
 
@@ -299,7 +299,7 @@
   }
 
   function normalizeFont(fontId) {
-    return FONT_MAP.has(fontId) ? fontId : "default";
+    return FONT_MAP.has(fontId) ? fontId : "poppins";
   }
 
   function currentFont() {
@@ -494,7 +494,7 @@
       if (event.key === "Enter") updateUsername(usernameInput.value);
     });
     panel.querySelector("[data-font-select]").addEventListener("change", (event) => updateFontPreference(event.target.value));
-    panel.querySelector("[data-reset-font]").addEventListener("click", () => updateFontPreference("default"));
+    panel.querySelector("[data-reset-font]").addEventListener("click", () => updateFontPreference("poppins"));
     panel.appendChild(el("div", "setting-row danger-zone", `
       <span><strong>Reset my stats</strong><span class="small">Coins, collection, loadouts, quests, ratings, friends, and match history reset to starter state.</span></span>
       <button data-reset-stats>Reset</button>

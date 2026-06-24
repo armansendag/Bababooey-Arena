@@ -139,7 +139,7 @@ Alpha signup asks for only username, email, and password. Usernames are public, 
 
 Email verification is intentionally disabled for alpha testing. The frontend keeps the existing session token in local storage so players stay logged in on that device. Players can change their username from Settings, but only once every 30 days.
 
-Settings also include an account-saved UI font picker with a local storage fallback. Font changes apply immediately, persist after refresh/login, and reset safely to Default if an unsupported font is received.
+Settings also include an account-saved UI font picker with a local storage fallback. Poppins is the default font. Font changes apply immediately, persist after refresh/login, and reset safely to Poppins if an unsupported font is received.
 
 Friend codes remain unique. Friends can add each other by either public username or friend code.
 

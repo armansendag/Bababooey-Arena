@@ -67,7 +67,7 @@ function sanitizeProfile(profile) {
     selectedCoreCardId: profile.selectedCoreCardId,
     tutorialState: profile.tutorialState,
     settings: {
-      font: settings.font || "default"
+      font: settings.font || "poppins"
     },
     freePacks: profile.freePacks || {},
     createdAt: profile.createdAt,

@@ -124,6 +124,9 @@ test("settings exposes font picker with immediate apply and persistence", () => 
   }
   assert.match(appSource, /data-font-select/);
   assert.match(appSource, /data-reset-font/);
+  assert.match(appSource, /Default \(Poppins\)/);
+  assert.match(appSource, /localStorage\.getItem\("bababooey_font"\) \|\| "poppins"/);
+  assert.match(appSource, /updateFontPreference\("poppins"\)/);
   assert.match(appSource, /data-font-preview/);
   assert.match(appSource, /function applyFontPreference/);
   assert.match(appSource, /document\.documentElement\.style\.setProperty\("--ui-font"/);

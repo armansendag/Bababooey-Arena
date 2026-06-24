@@ -123,7 +123,7 @@ test("font preference persists on the account and unsupported fonts fall back", 
   assert.equal(restored.profiles.get(player.user.id).settings.font, "poppins");
 
   const fallback = app.services.profiles.update(player.user.id, { settings: { font: "layout_destroyer" } });
-  assert.equal(fallback.settings.font, "default");
+  assert.equal(fallback.settings.font, "poppins");
 });
 
 test("friends can be found by username or friend code", () => {

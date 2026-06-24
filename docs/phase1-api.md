@@ -23,7 +23,7 @@ Authorization: Bearer <token>
 - `PATCH /me`
   - body: `{ "username": "...", "selectedCoreCardId": "core_starter", "settings": { "font": "poppins" } }`
   - username changes are limited to once every 30 days
-  - supported font settings are validated server-side; unsupported values fall back to `default`
+  - supported font settings are validated server-side; unsupported values fall back to `poppins`
 
 ## Cards and Collection
 
