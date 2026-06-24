@@ -60,3 +60,14 @@ test("frontend does not expose an admin panel", () => {
   assert.doesNotMatch(appSource, /function renderAdmin/);
   assert.doesNotMatch(appSource, /\/admin\/reset/);
 });
+
+test("settings exposes self-service stat reset only", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /Reset my stats/);
+  assert.match(appSource, /function resetMyStats/);
+  assert.match(appSource, /\/me\/reset/);
+  assert.match(appSource, /RESET MY STATS/);
+  assert.match(cssSource, /\.danger-zone/);
+});

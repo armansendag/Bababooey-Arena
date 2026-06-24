@@ -144,3 +144,31 @@ test("reset operations are not exposed through browser admin routes", async (t) 
   assert.equal(app.store.users.size, 1);
   assert.equal(app.store.profiles.get(player.user.id).coins, 1025);
 });
+
+test("players can reset only their own stats from settings route", async (t) => {
+  const app = createApp();
+  const playerA = register(app, "settings-reset-a@example.com", "Settings Alpha");
+  const playerB = register(app, "settings-reset-b@example.com", "Settings Bravo");
+  seedPlayerData(app, playerA, playerB);
+  const { server, baseUrl } = await listen(app);
+  t.after(() => server.close());
+  const auth = { authorization: `Bearer ${playerA.token}` };
+
+  await assert.rejects(
+    () => request(baseUrl, "/me/reset", { method: "POST", headers: auth, body: { confirmation: "RESET MY ACCOUNT" } }),
+    /Confirmation required/
+  );
+
+  const reset = await request(baseUrl, "/me/reset", {
+    method: "POST",
+    headers: auth,
+    body: { confirmation: "RESET MY STATS" }
+  });
+
+  assert.equal(reset.profile.userId, playerA.user.id);
+  assert.equal(reset.profile.coins, 1000);
+  assert.deepEqual(reset.profile.freePacks, { starter_pack: 3 });
+  assert.equal(reset.collection.filter((item) => item.ownedCount > 0).length, 9);
+  assert.equal(app.store.users.has(playerB.user.id), true);
+  assert.equal(app.store.profiles.get(playerB.user.id).displayName, "Settings Bravo");
+});

@@ -1149,6 +1149,20 @@ button:disabled {
   min-height: 32px;
 }
 
+.danger-zone {
+  border-color: rgba(225, 107, 98, .55);
+  background: rgba(225, 107, 98, .08);
+}
+
+.danger-zone > span {
+  display: grid;
+  gap: 4px;
+}
+
+.danger-zone button {
+  border-color: rgba(225, 107, 98, .7);
+}
+
 @keyframes targetPulse {
   from { box-shadow: 0 0 0 2px rgba(224, 184, 90, .18), 0 0 12px rgba(224, 184, 90, .18); }
   to { box-shadow: 0 0 0 2px rgba(224, 184, 90, .42), 0 0 26px rgba(224, 184, 90, .34); }

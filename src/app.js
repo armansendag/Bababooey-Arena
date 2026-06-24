@@ -112,6 +112,13 @@ function isDebugPersistenceEnabled() {
   return process.env.NODE_ENV !== "production" || process.env.ENABLE_ADMIN_DEBUG === "true";
 }
 
+function requireConfirmation(actual, expected) {
+  if (actual === expected) return;
+  const error = new Error(`Confirmation required. Type ${expected} to continue.`);
+  error.status = 400;
+  throw error;
+}
+
 function persistenceDebugSnapshot(store) {
   return {
     storeType: store.persistence?.type || "memory",
@@ -220,6 +227,18 @@ function createApp(options = {}) {
         if (req.method === "GET") return sendJson(res, 200, services.profiles.get(user.id));
         if (req.method === "PATCH") return sendJson(res, 200, services.profiles.update(user.id, await readJson(req)));
         return methodNotAllowed(res);
+      }
+
+      if (path === "/me/reset") {
+        if (req.method !== "POST") return methodNotAllowed(res);
+        const body = await readJson(req);
+        requireConfirmation(body.confirmation, "RESET MY STATS");
+        store.resetPlayerAccount(user.id);
+        return sendJson(res, 200, {
+          profile: services.profiles.get(user.id),
+          collection: services.collection.list(user.id),
+          loadouts: services.loadouts.list(user.id)
+        });
       }
 
       if (path === "/cards" && req.method === "GET") {

@@ -69,7 +69,7 @@ Migration status: <n> applied, <n> already applied, <n> total.
 
 Use these only for development, beta cleanup, or a broken test account. Reset tools preserve game content: card catalog, packs, quest definitions, cores, and other static content.
 
-There is no in-game Admin panel. Run reset commands from Command Prompt or PowerShell in the project folder.
+There is no in-game Admin panel. Players can reset only their own progress from Settings by typing `RESET MY STATS`. Run broader reset commands from Command Prompt or PowerShell in the project folder.
 
 Reset one user:
 

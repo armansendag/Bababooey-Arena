@@ -426,6 +426,11 @@
         render();
       });
     });
+    panel.appendChild(el("div", "setting-row danger-zone", `
+      <span><strong>Reset my stats</strong><span class="small">Coins, collection, loadouts, quests, ratings, friends, and match history reset to starter state.</span></span>
+      <button data-reset-stats>Reset</button>
+    `));
+    panel.querySelector("[data-reset-stats]").addEventListener("click", resetMyStats);
     panel.appendChild(iconButton("X", "Close", false, () => {
       state.settingsOpen = false;
       render();
@@ -438,6 +443,31 @@
     });
     wrapper.appendChild(panel);
     return wrapper;
+  }
+
+  async function resetMyStats() {
+    const confirmation = "RESET MY STATS";
+    const typed = prompt(`Type ${confirmation} to reset your own account progress.`);
+    if (typed !== confirmation) {
+      setMessage("Reset cancelled.");
+      return;
+    }
+    try {
+      const result = await api("/me/reset", { method: "POST", body: { confirmation: typed } });
+      state.profile = result.profile;
+      state.collection = result.collection;
+      state.settingsOpen = false;
+      state.loadoutDraft = {};
+      state.loadoutValidation = null;
+      state.packReveal = null;
+      await refreshAccountData();
+      await refreshOnlineData();
+      state.view = "home";
+      state.message = "Your stats were reset to the starter account state.";
+      render();
+    } catch (error) {
+      setMessage(error.message);
+    }
   }
 
   function renderCard(cardData, options = {}) {
