@@ -73,9 +73,6 @@ function validateLoadout({ cards, coreCardId, collection }, cardsById) {
 
   const summary = summarizeCards(normalizedCards, cardsById);
   if (summary.total !== 20) errors.push("Loadout must contain exactly 20 cards.");
-  if (summary.troops < 14 || summary.troops > 16) errors.push("Loadout must contain 14-16 troops.");
-  if (summary.spells > 3) errors.push("Loadout may contain up to 3 spells.");
-  if (summary.enchantments > 3) errors.push("Loadout may contain up to 3 enchantments.");
 
   return {
     valid: errors.length === 0,

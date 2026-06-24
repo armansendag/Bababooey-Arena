@@ -105,7 +105,7 @@ test("friend requests are created and accepted by friend code", () => {
   assert.equal(friends[0].addressee.displayName, "Bravo");
 });
 
-test("loadout builder enforces the approved phase 1 roster rules", () => {
+test("loadout builder enforces ownership, total count, and copy limits", () => {
   const app = createApp();
   const player = register(app, "loadout@example.com", "Builder");
   const cards = grantLegalLoadoutCollection(app, player.user.id);
@@ -130,7 +130,27 @@ test("loadout builder enforces the approved phase 1 roster rules", () => {
   assert.equal(loadout.name, "Mana Curve");
 });
 
-test("invalid loadouts report copy limit and composition failures", () => {
+test("loadouts may use any card type mix when count, ownership, and copy limits are valid", () => {
+  const app = createApp();
+  const player = register(app, "anymix@example.com", "Any Mix");
+  const spellCards = Array.from(app.store.cards.values()).filter((card) => card.type === "spell").slice(0, 20);
+  for (const card of spellCards) {
+    app.services.collection.grantCard(card.id, player.user.id, "test_seed");
+  }
+
+  const result = app.services.loadouts.validate(player.user.id, {
+    coreCardId: "core_starter",
+    cards: Object.fromEntries(spellCards.map((card) => [card.id, 1]))
+  });
+
+  assert.equal(result.valid, true, result.errors.join(", "));
+  assert.equal(result.summary.total, 20);
+  assert.equal(result.summary.spells, 20);
+  assert.equal(result.summary.troops, 0);
+  assert.equal(result.summary.enchantments, 0);
+});
+
+test("invalid loadouts report copy limit and total count failures", () => {
   const app = createApp();
   const player = register(app, "invalid@example.com", "Invalid");
   grantLegalLoadoutCollection(app, player.user.id);
@@ -146,8 +166,8 @@ test("invalid loadouts report copy limit and composition failures", () => {
   assert.equal(result.valid, false);
   assert.ok(result.errors.some((error) => error.includes("unique copy limit")));
   assert.ok(result.errors.some((error) => error.includes("exactly 20")));
-  assert.ok(result.errors.some((error) => error.includes("14-16 troops")));
-  assert.ok(result.errors.some((error) => error.includes("up to 3 spells")));
+  assert.equal(result.errors.some((error) => error.includes("14-16 troops")), false);
+  assert.equal(result.errors.some((error) => error.includes("up to 3 spells")), false);
 });
 
 test("pack opening charges coins, grants cards, converts copies beyond ten, and advances quests", () => {

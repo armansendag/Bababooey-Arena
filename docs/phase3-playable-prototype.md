@@ -31,7 +31,7 @@ The battle screen renders state from the Phase 2 battle engine:
 
 - Core HP for both players
 - current turn and active player
-- current mana and max mana
+- current banked mana and mana bank cap
 - available active-player roster
 - active troops
 - active enchantments
@@ -44,7 +44,7 @@ UI commands call local HTTP endpoints backed by `src/domain/battleEngine.js`:
 - play troop
 - play enchantment
 - cast spell
-- attack troop, enchantment, or core
+- attack troop, enchantment, or Core once enemy troops are cleared
 - end turn
 
 The UI does not resolve battle rules itself. It renders returned engine state and displays engine validation errors when commands are invalid.

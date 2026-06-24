@@ -25,7 +25,7 @@ Implemented in `src/domain/battleEngine.js`:
 - `statBuff`
 - `manaGain`
 - `manaGainFromDestroyedCost`
-- `maxManaIncrease`
+- `maxManaIncrease` (implemented as mana bank cap increase under the banked mana system)
 - `cooldownReduction`
 - `cooldownIncrease`
 - `spellCounter`
@@ -53,7 +53,7 @@ Implemented in `src/domain/battleEngine.js`:
 | Healing | Repair Loop, Haunted Cathedral, Mech Paladin |
 | Stat buffs | Pack Alpha, Pack Howl, Primal Roar, Overclock |
 | Mana gain | Coin, Emergency Funding, Mana Goblin, Crystal Mine, Supply Drop |
-| Max mana increase | Mana Spring, Worldroot Core |
+| Mana bank cap increase | Mana Spring, Worldroot Core |
 | Cooldown changes | Time Skip, Grave Call, Disrupt, Minor Inconvenience |
 | Spell countering | Nope, Magic Barrier |
 | Spell reflection | Reflect |
@@ -68,7 +68,7 @@ Implemented in `src/domain/battleEngine.js`:
 ## Effect Timing
 
 - Static effects are read while their source core, troop, or enchantment is active.
-- Start-of-turn effects run after cooldown ticks, defense regeneration, and mana refill.
+- Start-of-turn effects run after cooldown ticks, defense regeneration, and banked owner-turn mana gain.
 - On-play troop effects run immediately after the troop enters the battlefield.
 - Spell counters and reflections are consumed one at a time by the next enemy spell.
 - Death triggers run after the defeated troop moves back to roster cooldown.

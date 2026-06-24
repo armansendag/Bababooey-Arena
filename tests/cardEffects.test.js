@@ -44,7 +44,8 @@ function passTo(state, playerId, mana = 10) {
   }
   const player = state.players.find((item) => item.id === playerId);
   player.currentMana = mana;
-  player.baseMaxMana = Math.max(player.baseMaxMana, Math.min(10, mana));
+  player.manaBankCap = Math.max(player.manaBankCap || 20, mana);
+  player.baseMaxMana = player.manaBankCap;
   return player;
 }
 
@@ -60,22 +61,23 @@ test("spell damage, healing, true damage, and mana gain resolve from generic eff
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_sit" }, { cardCatalog: cardsById });
   assert.equal(p(state, "p2").coreHp, 200);
 
-  p(state, "p1").coreHp = 40;
+  p(state, "p1").coreHp = 10;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_repair_loop" }, { cardCatalog: cardsById });
-  assert.equal(p(state, "p1").coreHp, 44);
+  assert.equal(p(state, "p1").coreHp, 14);
 
   p(state, "p1").currentMana = 10;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_orbital_ping" }, { cardCatalog: cardsById });
   assert.equal(p(state, "p2").coreHp, 196);
 
   p(state, "p1").currentMana = 10;
+  p(state, "p1").coreHp = 20;
   const beforeMana = p(state, "p1").currentMana;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_emergency_funding" }, { cardCatalog: cardsById });
   assert.equal(p(state, "p1").currentMana, beforeMana + 3);
-  assert.equal(p(state, "p1").coreHp, 19);
+  assert.equal(p(state, "p1").coreHp, 15);
 });
 
-test("stat buffs, max mana, and start-of-turn mana effects apply", () => {
+test("stat buffs, mana bank cap, and start-of-turn mana effects apply", () => {
   const state = match({ troop_beast_pouncing_cub: 3, troop_beast_pack_alpha: 1, enchant_mana_spring: 1, enchant_crystal_mine: 1 });
   passTo(state, "p1", 10);
 
@@ -86,9 +88,11 @@ test("stat buffs, max mana, and start-of-turn mana effects apply", () => {
 
   applyCommand(state, { type: "playEnchantment", playerId: "p1", cardId: "enchant_mana_spring" }, { cardCatalog: cardsById });
   applyCommand(state, { type: "playEnchantment", playerId: "p1", cardId: "enchant_crystal_mine" }, { cardCatalog: cardsById });
+  const beforeTurnMana = p(state, "p1").currentMana;
   endTurn(state);
   endTurn(state);
-  assert.equal(p(state, "p1").currentMana >= p(state, "p1").baseMaxMana + 2, true);
+  assert.equal(p(state, "p1").baseMaxMana, 21);
+  assert.equal(p(state, "p1").currentMana > beforeTurnMana, true);
 });
 
 test("cooldown reduction and increase effects modify reusable cards", () => {
@@ -115,7 +119,7 @@ test("spell countering and reflection consume pending defenses", () => {
   passTo(state, "p2", 10);
   const countered = applyCommand(state, { type: "castSpell", playerId: "p2", cardId: "spell_sit" }, { cardCatalog: cardsById });
   assert.equal(countered.countered, true);
-  assert.equal(p(state, "p1").coreHp, 50);
+  assert.equal(p(state, "p1").coreHp, 20);
 
   endTurn(state);
   passTo(state, "p1", 10);
@@ -152,14 +156,14 @@ test("enchantment damage, destruction, and core damage reduction apply", () => {
 test("lifesteal, death triggers, and on-attack effects apply", () => {
   const state = match({ troop_beast_thunder_rhino: 1 });
   passTo(state, "p1", 10);
-  p(state, "p1").coreHp = 40;
+  p(state, "p1").coreHp = 10;
   const wraith = applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_undead_wraith_duelist" }, { cardCatalog: cardsById });
   endTurn(state);
   passTo(state, "p2", 10);
   endTurn(state);
   passTo(state, "p1", 10);
   applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: wraith.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: cardsById });
-  assert.equal(p(state, "p1").coreHp, 42);
+  assert.equal(p(state, "p1").coreHp, 12);
 
   const slime = applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_mana_slime" }, { cardCatalog: cardsById });
   endTurn(state);

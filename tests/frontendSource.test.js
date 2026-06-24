@@ -53,6 +53,15 @@ test("loadout builder only shows and autofills owned cards", () => {
   assert.match(appSource, /\.filter\(\(\[cardId\]\) => \(owned\.get\(cardId\) \|\| 0\) > 0\)/);
 });
 
+test("loadout card action buttons do not open card details", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /actions\.addEventListener\("pointerdown", \(event\) => event\.stopPropagation\(\)\)/);
+  assert.match(appSource, /actions\.addEventListener\("click", \(event\) => event\.stopPropagation\(\)\)/);
+  assert.doesNotMatch(appSource, /node\.addEventListener\("mouseenter", \(\) => \{\s*state\.detailCard = cardData/s);
+  assert.match(appSource, /state\.detailCard = cardData;\s*render\(\);/);
+});
+
 test("collection and loadout card menus sort by rarity with owned-first toggles", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
   const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");

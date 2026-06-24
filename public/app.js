@@ -399,12 +399,12 @@
     panel.innerHTML = `
       <h2>Battle Basics</h2>
       <div class="tutorial-grid">
-        <div><strong>Mana</strong><p>Mana starts at 1, refills at the start of turn, and max mana rises by 1 up to 10.</p></div>
+        <div><strong>Mana</strong><p>Mana is banked. You keep unspent mana, gain 1/2/3/4/5 by owner turn, and the bank caps at 20.</p></div>
         <div><strong>Cooldowns</strong><p>Defeated troops, destroyed enchantments, and used spells return after owner-turn cooldown ticks.</p></div>
         <div><strong>Troops</strong><p>Troops need a full turn before attacking unless they have Haste. Select your troop, then a highlighted target.</p></div>
         <div><strong>Spells</strong><p>Spells are reusable. Some resolve instantly, while targeted spells ask for a valid target.</p></div>
         <div><strong>Enchantments</strong><p>You can keep up to 3 active enchantments. Enchantments have HP and can be attacked.</p></div>
-        <div><strong>Core HP</strong><p>Each Core starts at 50 HP. Reduce the enemy Core to 0 to win.</p></div>
+        <div><strong>Core HP</strong><p>Each Core starts at 20 HP. Enemy troops block Core attacks until they are cleared.</p></div>
         <div><strong>End Turn</strong><p>Use End Turn when you are finished spending mana and attacking.</p></div>
       </div>
     `;
@@ -511,26 +511,21 @@
       <div class="small">${escapeHtml((cardData.perks || []).join(" | "))}</div>
       <div class="stats">${stats.join("")}</div>
     `;
-    node.addEventListener("mouseenter", () => {
-      state.detailCard = cardData;
-      renderDetailOnly();
-    });
-    node.addEventListener("mouseleave", () => {
-      if (state.detailCard?.id === cardData.id) {
-        state.detailCard = null;
-        renderDetailOnly();
-      }
-    });
-    node.addEventListener("dblclick", () => {
-      state.detailCard = cardData;
-      render();
-    });
     if (options.actions) {
       const actions = el("div", "card-actions");
       options.actions.forEach((action) => actions.appendChild(action));
+      actions.addEventListener("pointerdown", (event) => event.stopPropagation());
+      actions.addEventListener("click", (event) => event.stopPropagation());
       node.appendChild(actions);
     }
-    if (options.onClick) node.addEventListener("click", options.onClick);
+    node.addEventListener("click", (event) => {
+      if (options.onClick) {
+        options.onClick(event);
+        return;
+      }
+      state.detailCard = cardData;
+      render();
+    });
     return node;
   }
 
@@ -1190,9 +1185,10 @@
     const zone = el("div", "player-zone");
     const coreHit = state.feedback?.target?.type === "core" && state.feedback.target.playerId === player.id;
     const core = el("div", `core ${active ? "active" : ""} ${coreHit ? "damage core-hit" : ""}`);
-    const maxCoreHp = card(player.coreCardId)?.hp || 50;
-    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, Math.min(100, (player.coreHp / maxCoreHp) * 100))}%"></span></div><div>${player.coreHp} / ${maxCoreHp} HP</div><div class="small">Mana ${player.currentMana}/${player.baseMaxMana}${player.temporaryMana ? ` +${player.temporaryMana}` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
-    if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker") {
+    const maxCoreHp = card(player.coreCardId)?.hp || 20;
+    const manaCap = player.manaBankCap || player.baseMaxMana || 20;
+    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, Math.min(100, (player.coreHp / maxCoreHp) * 100))}%"></span></div><div>${player.coreHp} / ${maxCoreHp} HP</div><div class="small">Bank ${player.currentMana}/${manaCap}${player.temporaryMana ? ` (+${player.temporaryMana} temp)` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
+    if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker" && player.troops.length === 0) {
       core.classList.add("targetable");
       core.setAttribute("title", "Valid core target");
       core.addEventListener("click", () => sendBattleCommand({
@@ -1240,12 +1236,12 @@
     section.innerHTML = `
       <div class="versus-title">
         <h2>Local Match Ready</h2>
-        <p>Two players. Two 50 HP Cores. One deterministic rules engine.</p>
+        <p>Two players. Two 20 HP Cores. Clear troops first, then crack the Core.</p>
       </div>
       <div class="versus-grid">
-        <div class="versus-player"><h3>Player 1</h3><div class="core-orb">50</div><div class="pill-row"><span class="pill">Starts first</span><span class="pill">${p1.roster.length} cards</span></div></div>
+        <div class="versus-player"><h3>Player 1</h3><div class="core-orb">20</div><div class="pill-row"><span class="pill">Starts first</span><span class="pill">${p1.roster.length} cards</span></div></div>
         <div class="versus-mark">VS</div>
-        <div class="versus-player"><h3>Player 2</h3><div class="core-orb">50</div><div class="pill-row"><span class="pill">Coin spell</span><span class="pill">${p2.roster.length} cards</span></div></div>
+        <div class="versus-player"><h3>Player 2</h3><div class="core-orb">20</div><div class="pill-row"><span class="pill">Coin spell</span><span class="pill">${p2.roster.length} cards</span></div></div>
       </div>
     `;
     const previews = el("div", "grid two");
@@ -1332,7 +1328,8 @@
     }
     const active = activePlayer();
     const enemy = opponentPlayer();
-    const summary = el("section", `section battle-summary ${state.match.status === "finished" ? "winner" : ""}`, `<div class="pill-row"><span class="pill">${state.battleMode === "online" ? `Online ${escapeHtml(state.onlineMatch?.mode || "friend")} match` : "Local battle"}</span><span class="pill">Connection ${escapeHtml(state.battleMode === "online" ? state.connectionStatus : "local")}</span>${state.opponentDisconnected ? `<span class="pill">Opponent disconnected</span>` : ""}<span class="pill">Turn ${state.match.turnNumber}</span><span class="pill">Active ${playerName(active.id)}</span><span class="pill">Mana ${active.currentMana}/${active.baseMaxMana}</span><span class="pill">${state.match.status}</span>${state.match.winnerId ? `<span class="pill">Winner ${playerName(state.match.winnerId)}</span>` : ""}</div>${state.connectionStatus === "reconnecting" && state.battleMode === "online" ? `<div class="feedback-banner">Reconnecting to online match...</div>` : ""}${state.feedback ? `<div class="feedback-banner">${escapeHtml(state.feedback.text)}</div>` : ""}`);
+    const activeManaCap = active.manaBankCap || active.baseMaxMana || 20;
+    const summary = el("section", `section battle-summary ${state.match.status === "finished" ? "winner" : ""}`, `<div class="pill-row"><span class="pill">${state.battleMode === "online" ? `Online ${escapeHtml(state.onlineMatch?.mode || "friend")} match` : "Local battle"}</span><span class="pill">Connection ${escapeHtml(state.battleMode === "online" ? state.connectionStatus : "local")}</span>${state.opponentDisconnected ? `<span class="pill">Opponent disconnected</span>` : ""}<span class="pill">Turn ${state.match.turnNumber}</span><span class="pill">Active ${playerName(active.id)}</span><span class="pill">Bank ${active.currentMana}/${activeManaCap}</span><span class="pill">${state.match.status}</span>${state.match.winnerId ? `<span class="pill">Winner ${playerName(state.match.winnerId)}</span>` : ""}</div>${state.connectionStatus === "reconnecting" && state.battleMode === "online" ? `<div class="feedback-banner">Reconnecting to online match...</div>` : ""}${state.feedback ? `<div class="feedback-banner">${escapeHtml(state.feedback.text)}</div>` : ""}`);
     page.appendChild(summary);
     const arena = el("section", "arena");
     arena.appendChild(playerZone(enemy, true));
@@ -1385,7 +1382,7 @@
   }
 
   function selectedText() {
-    if (state.selected.kind === "attacker") return "Choose an enemy troop, enchantment, or core.";
+    if (state.selected.kind === "attacker") return "Choose an enemy troop or enchantment. Core opens when enemy troops are gone.";
     if (state.selected.kind === "spell" && state.selected.cardId === "spell_disenchant") return "Disenchant selected: choose a glowing enemy enchantment.";
     if (state.selected.kind === "spell") return "Spell selected: choose a highlighted valid target.";
     return "";

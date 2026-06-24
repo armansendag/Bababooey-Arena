@@ -68,9 +68,9 @@ Starter archetypes live in `src/data/starterLoadouts.js`.
 | Undead | `core_undead` | Sticky undead curve |
 | Memeborn | `core_memeborn` | Low-cost meme pressure and weird value cards |
 
-Each starter loadout contains exactly 20 non-core cards, 14-16 troops, no more than 3 spells, no more than 3 enchantments, and a legal selected core.
+Each starter loadout contains exactly 20 non-core cards and a legal selected core. Player-built loadouts may use any mix of troops, spells, and enchantments as long as the deck has 20 non-core cards, owned copies, and legal copy limits.
 
-New accounts receive all seven starter loadouts and enough owned copies to play them. Aggro Starter is active by default so a new player can queue immediately.
+New accounts receive one beginner starter loadout plus starter rewards. Additional archetypes are collection goals, not automatically owned full decks.
 
 ## Pack Contents
 

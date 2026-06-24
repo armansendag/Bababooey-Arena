@@ -46,9 +46,7 @@ Authorization: Bearer <token>
 Loadout rules:
 
 - exactly 20 non-core cards
-- 14-16 troops
-- up to 3 spells
-- up to 3 enchantments
+- any mix of troops, spells, and enchantments is allowed
 - Standard cards: up to 3 copies
 - Limited cards: up to 2 copies
 - Unique cards: 1 copy

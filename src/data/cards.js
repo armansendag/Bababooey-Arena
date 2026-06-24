@@ -162,7 +162,7 @@ const troopCards = Object.entries(troopThemes).flatMap(([faction, entries]) => {
 const spellCards = [
   ["spell_sit", "Sit", "neutral", "rare", 7, 3, "limited", ["Deal 100 damage"]],
   ["spell_mana_conversion", "Mana Conversion", "mana", "uncommon", 2, 2, "standard", ["Destroy a troop and gain its mana cost"]],
-  ["spell_emergency_funding", "Emergency Funding", "mana", "common", 0, 2, "standard", ["Gain +3 temporary mana and deal 25 damage to your Core"]],
+  ["spell_emergency_funding", "Emergency Funding", "mana", "common", 0, 2, "standard", ["Gain +3 temporary mana and deal 5 damage to your Core"]],
   ["spell_disenchant", "Disenchant", "arcane", "common", 2, 2, "standard", ["Destroy an enchantment"]],
   ["spell_nope", "Nope", "arcane", "epic", 3, 4, "limited", ["Counter a spell"]],
   ["spell_reflect", "Reflect", "arcane", "epic", 4, 4, "limited", ["Redirect a spell"]],
@@ -198,7 +198,7 @@ const spellCards = [
 }));
 
 const enchantmentCards = [
-  ["enchant_mana_spring", "Mana Spring", "mana", "common", 2, 2, "standard", 8, ["+1 maximum mana while active"]],
+  ["enchant_mana_spring", "Mana Spring", "mana", "common", 2, 2, "standard", 8, ["+1 mana bank cap while active"]],
   ["enchant_crystal_mine", "Crystal Mine", "mana", "uncommon", 3, 2, "standard", 9, ["Gain +1 mana each turn"]],
   ["enchant_arcane_reservoir", "Arcane Reservoir", "arcane", "rare", 3, 3, "limited", 10, ["First spell costs 1 less"]],
   ["enchant_mystic_well", "Mystic Well", "mana", "rare", 4, 3, "limited", 11, ["Gain mana when casting spells"]],
@@ -232,14 +232,14 @@ const enchantmentCards = [
 }));
 
 const coreCards = [
-  ["core_starter", "Starter Core", "neutral", "common", 50, ["Core HP 50"]],
-  ["core_aggro", "War Drum Core", "beast", "uncommon", 50, ["Core HP 50", "Aggro starter core"]],
-  ["core_ramp", "Worldroot Core", "mana", "uncommon", 50, ["Core HP 50", "Ramp starter core"]],
-  ["core_control", "Prism Core", "arcane", "rare", 50, ["Core HP 50", "Control starter core"]],
-  ["core_beast", "Apex Core", "beast", "rare", 50, ["Core HP 50", "Beast starter core"]],
-  ["core_machine", "Factory Core", "machine", "rare", 50, ["Core HP 50", "Machine starter core"]],
-  ["core_undead", "Crypt Core", "undead", "rare", 50, ["Core HP 50", "Undead starter core"]],
-  ["core_memeborn", "Bababooey Core", "memeborn", "bababooey", 50, ["Core HP 50", "Memeborn starter core"]]
+  ["core_starter", "Starter Core", "neutral", "common", 20, ["Core HP 20"]],
+  ["core_aggro", "War Drum Core", "beast", "uncommon", 20, ["Core HP 20", "Aggro starter core"]],
+  ["core_ramp", "Worldroot Core", "mana", "uncommon", 20, ["Core HP 20", "Ramp starter core"]],
+  ["core_control", "Prism Core", "arcane", "rare", 20, ["Core HP 20", "Control starter core"]],
+  ["core_beast", "Apex Core", "beast", "rare", 20, ["Core HP 20", "Beast starter core"]],
+  ["core_machine", "Factory Core", "machine", "rare", 20, ["Core HP 20", "Machine starter core"]],
+  ["core_undead", "Crypt Core", "undead", "rare", 20, ["Core HP 20", "Undead starter core"]],
+  ["core_memeborn", "Bababooey Core", "memeborn", "bababooey", 20, ["Core HP 20", "Memeborn starter core"]]
 ].map(([id, name, faction, rarity, hp, perks]) => ({
   id,
   name,
@@ -280,7 +280,7 @@ const cardEffects = {
   ],
   spell_emergency_funding: [
     { trigger: "spell", type: "manaGain", amount: 3, temporary: true },
-    { trigger: "spell", type: "trueDamageSelfCore", amount: 25 }
+    { trigger: "spell", type: "trueDamageSelfCore", amount: 5 }
   ],
   spell_disenchant: [{ trigger: "spell", type: "destroyEnchantment", target: "targetEnchantment" }],
   spell_nope: [{ trigger: "spell", type: "spellCounter", amount: 1 }],

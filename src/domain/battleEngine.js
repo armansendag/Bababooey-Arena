@@ -2,8 +2,8 @@
 
 const { cardsById } = require("../data/cards");
 
-const CORE_HP = 50;
-const BASE_MANA_CAP = 10;
+const CORE_HP = 20;
+const MANA_BANK_CAP = 20;
 
 class BattleRuleError extends Error {
   constructor(message) {
@@ -58,7 +58,9 @@ function createPlayerState({ id, loadout }, seat, cardCatalog) {
     seat,
     coreCardId: coreCard.id,
     coreHp: coreCard.hp || CORE_HP,
-    baseMaxMana: 0,
+    baseMaxMana: MANA_BANK_CAP,
+    manaBankCap: MANA_BANK_CAP,
+    ownerTurnCount: 0,
     currentMana: 0,
     temporaryMana: 0,
     coinAvailable: seat === 2,
@@ -157,6 +159,8 @@ function addEvent(state, type, playerId, payload = {}) {
 function spendMana(player, amount) {
   assert(amount >= 0, "Mana cost cannot be negative.");
   assert(player.currentMana >= amount, "Not enough mana.");
+  const temporarySpent = Math.min(player.temporaryMana || 0, amount);
+  player.temporaryMana = Math.max(0, (player.temporaryMana || 0) - temporarySpent);
   player.currentMana -= amount;
 }
 
@@ -210,8 +214,12 @@ function sumActiveEffects(player, cardCatalog, type) {
     .reduce((sum, effect) => sum + (effect.amount || 0), 0);
 }
 
-function effectiveMaxMana(player, cardCatalog) {
-  return BASE_MANA_CAP + sumActiveEffects(player, cardCatalog, "maxManaIncrease");
+function effectiveManaBankCap(player, cardCatalog) {
+  return (player.manaBankCap || MANA_BANK_CAP) + sumActiveEffects(player, cardCatalog, "maxManaIncrease");
+}
+
+function manaGainForOwnerTurn(ownerTurnCount) {
+  return Math.min(5, Math.max(1, ownerTurnCount));
 }
 
 function effectiveAttack(card, troop) {
@@ -228,10 +236,16 @@ function healCore(player, amount, cardCatalog) {
   return { healed: amount, coreHp: player.coreHp };
 }
 
-function gainMana(player, amount, temporary = true) {
-  if (temporary) player.temporaryMana += amount;
-  player.currentMana += amount;
-  return { manaGained: amount, temporary };
+function gainMana(player, amount, temporary = true, options = {}) {
+  const cap = options.cap || MANA_BANK_CAP;
+  const gained = options.ignoreCap ? amount : Math.max(0, Math.min(amount, cap - player.currentMana));
+  if (temporary) player.temporaryMana += gained;
+  player.currentMana += gained;
+  return { manaGained: gained, requestedMana: amount, temporary, capped: gained < amount };
+}
+
+function gainPlayerMana(player, amount, temporary, cardCatalog, options = {}) {
+  return gainMana(player, amount, temporary, { ...options, cap: effectiveManaBankCap(player, cardCatalog) });
 }
 
 function startTurn(state, playerId, cardCatalog, reason = "turn_start") {
@@ -242,9 +256,11 @@ function startTurn(state, playerId, cardCatalog, reason = "turn_start") {
 
   tickCooldowns(player);
   regenerateDefense(player, cardCatalog);
-  player.baseMaxMana = Math.min(BASE_MANA_CAP, player.baseMaxMana + 1);
   player.temporaryMana = 0;
-  player.currentMana = Math.min(effectiveMaxMana(player, cardCatalog), player.baseMaxMana + sumActiveEffects(player, cardCatalog, "maxManaIncrease"));
+  player.manaBankCap = player.manaBankCap || MANA_BANK_CAP;
+  player.baseMaxMana = effectiveManaBankCap(player, cardCatalog);
+  player.ownerTurnCount = (player.ownerTurnCount || 0) + 1;
+  const manaResult = gainPlayerMana(player, manaGainForOwnerTurn(player.ownerTurnCount), false, cardCatalog);
 
   for (const troop of player.troops) {
     troop.canAttack = true;
@@ -259,8 +275,9 @@ function startTurn(state, playerId, cardCatalog, reason = "turn_start") {
 
   addEvent(state, "turn_started", player.id, {
     reason,
-    maxMana: player.baseMaxMana,
-    effectiveMaxMana: effectiveMaxMana(player, cardCatalog),
+    ownerTurnCount: player.ownerTurnCount,
+    manaGained: manaResult.manaGained,
+    manaBankCap: effectiveManaBankCap(player, cardCatalog),
     currentMana: player.currentMana,
     effects: startResults
   });
@@ -475,7 +492,7 @@ function resolveEffect(state, player, effect, context = {}) {
     case "healCore":
       return healCore(player, effect.amount, cardCatalog);
     case "manaGain":
-      return gainMana(player, effect.amount, effect.temporary !== false);
+      return gainPlayerMana(player, effect.amount, effect.temporary !== false, cardCatalog, { ignoreCap: effect.ignoreCap });
     case "statBuff": {
       const targets = matchingTroops(player, effect.selector, { ...context, effect, sourceInstance: effect.source?.instance || context.sourceInstance }, cardCatalog);
       return { buffed: targets.map((troop) => buffTroop(troop, effect, cardCatalog)) };
@@ -504,7 +521,7 @@ function resolveEffect(state, player, effect, context = {}) {
     }
     case "manaGainFromDestroyedCost": {
       const amount = context.destroyedCard?.manaCost || 0;
-      return gainMana(player, amount, effect.temporary !== false);
+      return gainPlayerMana(player, amount, effect.temporary !== false, cardCatalog, { ignoreCap: effect.ignoreCap });
     }
     case "spellCounter":
       player.pendingSpellCounters += effect.amount || 1;
@@ -529,7 +546,7 @@ function resolveEffect(state, player, effect, context = {}) {
       return { damaged: results };
     }
     case "manaGainForFaction":
-      if (sourceCard?.faction === effect.faction || context.triggerCard?.faction === effect.faction || context.playedCard?.faction === effect.faction) return gainMana(player, effect.amount, effect.temporary !== false);
+      if (sourceCard?.faction === effect.faction || context.triggerCard?.faction === effect.faction || context.playedCard?.faction === effect.faction) return gainPlayerMana(player, effect.amount, effect.temporary !== false, cardCatalog, { ignoreCap: effect.ignoreCap });
       return { skipped: true };
     default:
       return { effect: effect.type, skipped: true };
@@ -617,6 +634,7 @@ function attack(state, playerId, attackerInstanceId, target, options = {}) {
 
   if (target.type === "core") {
     assert(target.playerId === opponent.id, "Troops may only attack the enemy core.");
+    assert(opponent.troops.length === 0, "Enemy troops block core attacks.");
     result = damageCore(state, owner, opponent, attackValue, cardCatalog);
   } else if (target.type === "troop") {
     const targetLookup = findPlayerTroop(state, target.instanceId);
@@ -733,9 +751,8 @@ function consumeSpellReflection(state, caster) {
 function castCoin(state, player) {
   assert(player.coinAvailable, "Coin has already been used.");
   player.coinAvailable = false;
-  player.temporaryMana += 1;
-  player.currentMana += 1;
-  return { temporaryManaGained: 1 };
+  const result = gainPlayerMana(player, 1, true, cardsById);
+  return { temporaryManaGained: result.manaGained, capped: result.capped };
 }
 
 function destroyTargetEnchantmentBySpell(state, casterId, target, cardCatalog) {
@@ -800,8 +817,8 @@ function applyCommand(state, command, options = {}) {
 }
 
 module.exports = {
-  BASE_MANA_CAP,
   CORE_HP,
+  MANA_BANK_CAP,
   BattleRuleError,
   applyCommand,
   attack,

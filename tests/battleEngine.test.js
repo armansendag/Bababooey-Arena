@@ -105,25 +105,46 @@ test("match starts with player 1 at 1 mana and player 2 holding one Coin", () =>
   assert.equal(state.status, "active");
   assert.equal(state.activePlayerId, "p1");
   assert.equal(state.turnNumber, 1);
-  assert.equal(state.players[0].coreHp, 50);
-  assert.equal(state.players[0].baseMaxMana, 1);
+  assert.equal(state.players[0].coreHp, 20);
+  assert.equal(state.players[0].manaBankCap, 20);
+  assert.equal(state.players[0].ownerTurnCount, 1);
   assert.equal(state.players[0].currentMana, 1);
-  assert.equal(state.players[1].baseMaxMana, 0);
+  assert.equal(state.players[1].ownerTurnCount, 0);
   assert.equal(state.players[1].coinAvailable, true);
   assert.equal(state.eventLog[0].type, "turn_started");
 });
 
-test("turn system increases owner max mana to ten and refills at start of turn", () => {
+test("mana carries over and owner-turn gain follows the banked curve", () => {
   const state = match();
 
-  for (let i = 0; i < 24; i += 1) {
-    endTurn(state, state.activePlayerId);
-  }
+  assert.equal(state.players[0].currentMana, 1);
+  endTurn(state, "p1");
+  assert.equal(state.players[1].currentMana, 1);
+  endTurn(state, "p2");
+  assert.equal(state.players[0].currentMana, 3);
+  endTurn(state, "p1");
+  endTurn(state, "p2");
+  assert.equal(state.players[0].currentMana, 6);
+  endTurn(state, "p1");
+  endTurn(state, "p2");
+  assert.equal(state.players[0].currentMana, 10);
+  endTurn(state, "p1");
+  endTurn(state, "p2");
+  assert.equal(state.players[0].currentMana, 15);
+});
 
-  for (const player of state.players) {
-    assert.equal(player.baseMaxMana, 10);
-    assert.equal(player.currentMana, 10);
-  }
+test("mana bank cannot exceed 20 unless a card raises the bank cap", () => {
+  const state = match();
+  state.players[0].currentMana = 19;
+  endTurn(state, "p1");
+  endTurn(state, "p2");
+  assert.equal(state.players[0].currentMana, 20);
+
+  state.players[0].currentMana = 20;
+  state.players[0].manaBankCap = 21;
+  endTurn(state, "p1");
+  endTurn(state, "p2");
+  assert.equal(state.players[0].currentMana, 21);
 });
 
 test("Coin gives player 2 one temporary mana that disappears at end of turn", () => {
@@ -140,8 +161,12 @@ test("Coin gives player 2 one temporary mana that disappears at end of turn", ()
 
   applyCommand(state, { type: "playTroop", playerId: "p2", cardId: "troop_haste_striker" }, { cardCatalog: testCatalog() });
   assert.equal(p2.currentMana, 1);
+  assert.equal(p2.temporaryMana, 0);
+  applyCommand(state, { type: "castSpell", playerId: "p2", cardId: "spell_emergency_funding" }, { cardCatalog: testCatalog() });
+  assert.equal(p2.temporaryMana, 3);
   endTurn(state, "p2");
   assert.equal(p2.temporaryMana, 0);
+  assert.equal(p2.currentMana, 1);
 });
 
 test("troops cannot attack when summoned unless they have Haste", () => {
@@ -161,7 +186,46 @@ test("troops cannot attack when summoned unless they have Haste", () => {
     { cardCatalog: testCatalog() }
   );
   assert.equal(result.damage, 3);
-  assert.equal(state.players[1].coreHp, 47);
+  assert.equal(state.players[1].coreHp, 17);
+});
+
+test("core attacks are blocked by troops but not enchantments", () => {
+  const state = match();
+  const attacker = applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_haste_striker" }, { cardCatalog: testCatalog() });
+  endTurn(state, "p1");
+  const blocker = applyCommand(state, { type: "playTroop", playerId: "p2", cardId: "troop_slow_guard" }, { cardCatalog: testCatalog() });
+  state.players[1].currentMana = 1;
+  applyCommand(state, { type: "playEnchantment", playerId: "p2", cardId: "enchant_fragile" }, { cardCatalog: testCatalog() });
+  endTurn(state, "p2");
+
+  assert.throws(
+    () => applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: attacker.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: testCatalog() }),
+    /block core attacks/
+  );
+
+  applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: attacker.instanceId, target: { type: "troop", instanceId: blocker.instanceId } }, { cardCatalog: testCatalog() });
+  state.players[0].troops[0].canAttack = true;
+  state.players[0].troops[0].attacksThisTurn = 0;
+  state.players[1].troops = [];
+  const result = applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: attacker.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: testCatalog() });
+  assert.equal(result.damage, 6);
+  assert.equal(state.players[1].coreHp, 14);
+});
+
+test("Player 2 Coin does not create an overwhelming first-cycle mana lead", () => {
+  const state = match();
+  endTurn(state, "p1");
+  const p1 = state.players[0];
+  const p2 = state.players[1];
+
+  assert.equal(p1.currentMana, 1);
+  assert.equal(p2.currentMana, 1);
+  applyCommand(state, { type: "castSpell", playerId: "p2", cardId: "spell_coin" }, { cardCatalog: testCatalog() });
+  assert.equal(p2.currentMana, 2);
+  assert.equal(p2.temporaryMana, 1);
+  endTurn(state, "p2");
+  assert.equal(p1.currentMana, 3);
+  assert.equal(p2.currentMana, 1);
 });
 
 test("damage formula uses current defense, minimum one damage, and HP persists", () => {
@@ -221,7 +285,7 @@ test("spells are reusable and cooldowns tick down at the owner's turn start", ()
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_emergency_funding" }, { cardCatalog: testCatalog() });
   const p1 = state.players[0];
   assert.equal(p1.spellCooldowns.spell_emergency_funding, 2);
-  assert.equal(p1.coreHp, 25);
+  assert.equal(p1.coreHp, 15);
 
   assert.throws(
     () => applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_emergency_funding" }, { cardCatalog: testCatalog() }),

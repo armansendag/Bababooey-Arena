@@ -21,10 +21,10 @@ Each match tracks:
 - `winnerId`
 - `turnNumber`
 - `activePlayerId`
-- `eventLog`
-- per-player state:
-  - `coreHp`, starting at 50
-  - `baseMaxMana`, `currentMana`, `temporaryMana`
+  - `eventLog`
+  - per-player state:
+  - `coreHp`, starting at 20
+  - `currentMana`, `temporaryMana`, `manaBankCap`, `ownerTurnCount`
   - `coinAvailable` for player 2
   - `roster`
   - active `troops`
@@ -55,15 +55,19 @@ Attack targets:
 
 ## Rules Implemented
 
-- Core HP starts at 50.
+- Core HP starts at 20.
 - Player 1 starts the match.
-- Mana starts at 1 for the active player.
-- Each player's max mana increases by 1 at the start of their own turn, capped at 10.
-- Mana refills at the start of turn.
+- Mana is banked instead of refilled.
+- Players keep unspent mana between turns.
+- At the start of each owner turn, mana gained follows `1, 2, 3, 4, 5`, then stays at `5` per owner turn.
+- Mana bank cap is 20 by default.
+- Mana-generation cards add to current mana without exceeding the bank cap unless an effect explicitly ignores the cap.
 - Temporary mana disappears at end of turn.
 - Player 2 gets one `spell_coin` per match for +1 temporary mana.
 - Troops cannot attack on the turn they are played unless their card has `Haste`.
 - Troops can attack enemy troops, enemy enchantments, or the enemy Core.
+- Troops cannot attack the enemy Core while that opponent controls active troops.
+- Enemy enchantments do not block Core attacks.
 - Damage against defended targets is `Attack - currentDefense`, minimum 1.
 - Defense acts as a per-turn shield and regenerates to base defense at the start of the owner's turn.
 - HP persists until healing or destruction.
