@@ -23,7 +23,6 @@
     queueStatus: { status: "idle", mode: null, matchId: null },
     rankedProfile: null,
     leaderboards: { ranked: [], casual: [] },
-    adminDebug: null,
     socket: null,
     connectionStatus: "offline",
     opponentDisconnected: false,
@@ -62,8 +61,7 @@
     ["packs", "P", "Packs"],
     ["quests", "Q", "Quests"],
     ["online", "O", "Online"],
-    ["battle", "B", "Battle"],
-    ["admin", "A", "Admin"]
+    ["battle", "B", "Battle"]
   ];
 
   function api(path, options = {}) {
@@ -185,58 +183,6 @@
     state.leaderboards = leaderboards;
   }
 
-  async function refreshAdminDebug() {
-    if (!state.token) return;
-    try {
-      state.adminDebug = await api("/admin/debug");
-    } catch (error) {
-      state.message = error.message;
-    }
-  }
-
-  async function resetDevAccount(userId) {
-    try {
-      const isSelf = userId === state.profile?.userId;
-      const confirmation = isSelf ? "RESET MY ACCOUNT" : `RESET USER ${userId}`;
-      const typed = prompt(`Type ${confirmation} to reset ${isSelf ? "your account" : "this user"}.`);
-      if (typed !== confirmation) {
-        setMessage("Reset cancelled.");
-        return;
-      }
-      await api(isSelf ? "/admin/reset-my-account" : "/admin/reset-user", {
-        method: "POST",
-        body: isSelf ? { confirmation: typed } : { userId, confirmation: typed }
-      });
-      await refreshAccountData();
-      await refreshAdminDebug();
-      state.message = "Dev account reset with starter cards, coins, and a fresh Starter Deck.";
-      render();
-    } catch (error) {
-      setMessage(error.message);
-    }
-  }
-
-  async function resetAllPlayerData() {
-    const confirmation = "RESET ALL PLAYER DATA";
-    const typed = prompt(`Type ${confirmation} to delete all player accounts and progression.`);
-    if (typed !== confirmation) {
-      setMessage("Full reset cancelled.");
-      return;
-    }
-    try {
-      await api("/admin/reset-all-player-data", { method: "POST", body: { confirmation: typed } });
-      localStorage.removeItem("bababooey-token");
-      state.token = null;
-      state.profile = null;
-      state.adminDebug = null;
-      state.view = "home";
-      state.message = "All player data was reset. Create a fresh account to keep testing.";
-      renderAuth();
-    } catch (error) {
-      setMessage(error.message);
-    }
-  }
-
   function reportMatchBug() {
     const matchId = state.onlineMatch?.id || state.match?.id || null;
     const message = prompt("What went wrong in this match?");
@@ -249,7 +195,6 @@
   function setView(view) {
     state.view = view;
     state.selected = null;
-    if (view === "admin") refreshAdminDebug();
     render();
   }
 
@@ -1021,83 +966,6 @@
     shell(page);
   }
 
-  function renderAdmin() {
-    const page = el("div", "grid");
-    page.appendChild(titleBar("Admin Debug", [
-      iconButton("R", "Refresh", false, () => refreshAdminDebug().then(render)),
-      iconButton("M", "Reset Me", false, () => resetDevAccount(state.profile?.userId)),
-      iconButton("!", "Full Reset", false, () => resetAllPlayerData())
-    ]));
-    const debug = state.adminDebug;
-    if (!debug) {
-      page.appendChild(el("section", "section", "<h2>Loading debug data...</h2>"));
-      refreshAdminDebug().then(render);
-      shell(page);
-      return;
-    }
-
-    page.appendChild(el("section", "section", `
-      <h2>Beta Test Console</h2>
-      <div class="pill-row">
-        <span class="pill">${debug.users.length} users</span>
-        <span class="pill">${debug.matches.length} matches</span>
-        <span class="pill">${debug.errors.length} recent logs</span>
-        <span class="pill">${debug.bugReports.length} bug reports</span>
-      </div>
-    `));
-
-    const users = el("section", "section");
-    users.appendChild(el("h2", "", "Users"));
-    const userRows = el("div", "selected-list");
-    debug.users.forEach((user) => {
-      const row = el("div", "selected-row", `<strong>${escapeHtml(user.displayName)}</strong><span class="pill">${user.coins} coins</span><span class="pill">${user.loadoutCount} loadouts</span><span class="small">${escapeHtml(user.email)}</span>`);
-      row.appendChild(iconButton("R", user.id === state.profile?.userId ? "Reset Me" : "Admin Reset User", false, () => resetDevAccount(user.id)));
-      userRows.appendChild(row);
-    });
-    if (!debug.users.length) userRows.appendChild(el("div", "empty", "No users yet."));
-    users.appendChild(userRows);
-
-    const queues = el("section", "section");
-    queues.appendChild(el("h2", "", "Queues"));
-    queues.appendChild(el("div", "pill-row", `
-      <span class="pill">Casual ${(debug.queues.casual || []).length}</span>
-      <span class="pill">Ranked ${(debug.queues.ranked || []).length}</span>
-    `));
-
-    const matches = el("section", "section");
-    matches.appendChild(el("h2", "", "Matches"));
-    const matchRows = el("div", "selected-list");
-    debug.matches.forEach((match) => {
-      matchRows.appendChild(el("div", "selected-row", `<strong>${escapeHtml(match.mode)} ${escapeHtml(match.status)}</strong><span class="pill">Turn ${match.turnNumber || 0}</span><span class="pill">${match.eventCount} events</span><span class="small">${escapeHtml(match.id)}</span>`));
-    });
-    if (!debug.matches.length) matchRows.appendChild(el("div", "empty", "No online matches yet."));
-    matches.appendChild(matchRows);
-
-    const errors = el("section", "section");
-    errors.appendChild(el("h2", "", "Logs And Rejections"));
-    const errorRows = el("div", "selected-list");
-    debug.errors.slice(0, 12).forEach((entry) => {
-      errorRows.appendChild(el("div", "selected-row", `<strong>${escapeHtml(entry.level)} ${escapeHtml(entry.scope)}</strong><span class="pill">${entry.status}</span><span class="small">${escapeHtml(entry.message)}</span>`));
-    });
-    if (!debug.errors.length) errorRows.appendChild(el("div", "empty", "No logs yet."));
-    errors.appendChild(errorRows);
-
-    const reports = el("section", "section");
-    reports.appendChild(el("h2", "", "Bug Reports"));
-    const reportRows = el("div", "selected-list");
-    debug.bugReports.slice(0, 12).forEach((report) => {
-      reportRows.appendChild(el("div", "selected-row", `<strong>${escapeHtml(report.matchId || "No match")}</strong><span class="small">${escapeHtml(report.message)}</span>`));
-    });
-    if (!debug.bugReports.length) reportRows.appendChild(el("div", "empty", "No bug reports yet."));
-    reports.appendChild(reportRows);
-
-    const grid = el("div", "grid two");
-    grid.append(users, queues, matches, errors);
-    page.appendChild(grid);
-    page.appendChild(reports);
-    shell(page);
-  }
-
   function joinQueue(mode) {
     api(`/queue/${mode}/join`, { method: "POST" })
       .then((response) => {
@@ -1528,7 +1396,6 @@
     if (state.view === "quests") return renderQuests();
     if (state.view === "online") return renderOnline();
     if (state.view === "battle") return renderBattle();
-    if (state.view === "admin") return renderAdmin();
   }
 
   document.addEventListener("keydown", (event) => {

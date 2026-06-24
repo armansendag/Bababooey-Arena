@@ -125,7 +125,7 @@ test("resetAllPlayerData clears player state while preserving game content", () 
   assert.equal(app.store.quests.size, contentCounts.quests);
 });
 
-test("admin reset HTTP routes require confirmation", async (t) => {
+test("reset operations are not exposed through browser admin routes", async (t) => {
   const app = createApp();
   const player = register(app, "http-reset@example.com", "HTTP Reset");
   app.store.addCoinTransaction({ playerId: player.user.id, amount: 25, reason: "test_reward" });
@@ -134,22 +134,13 @@ test("admin reset HTTP routes require confirmation", async (t) => {
   const auth = { authorization: `Bearer ${player.token}` };
 
   await assert.rejects(
-    () => request(baseUrl, "/admin/reset-my-account", { method: "POST", headers: auth, body: { confirmation: "RESET" } }),
-    /Confirmation required/
+    () => request(baseUrl, "/admin/reset-my-account", { method: "POST", headers: auth, body: { confirmation: "RESET MY ACCOUNT" } }),
+    /Not found/
   );
-
-  const reset = await request(baseUrl, "/admin/reset-my-account", {
-    method: "POST",
-    headers: auth,
-    body: { confirmation: "RESET MY ACCOUNT" }
-  });
-  assert.equal(reset.profile.coins, 1000);
-
-  const full = await request(baseUrl, "/admin/reset-all-player-data", {
-    method: "POST",
-    headers: auth,
-    body: { confirmation: "RESET ALL PLAYER DATA" }
-  });
-  assert.equal(full.reset.users, 0);
-  assert.equal(app.store.cards.size > 0, true);
+  await assert.rejects(
+    () => request(baseUrl, "/admin/reset-all-player-data", { method: "POST", headers: auth, body: { confirmation: "RESET ALL PLAYER DATA" } }),
+    /Not found/
+  );
+  assert.equal(app.store.users.size, 1);
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1025);
 });

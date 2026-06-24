@@ -15,10 +15,6 @@ const { createPackService } = require("./services/packService");
 const { createProfileService } = require("./services/profileService");
 const { createQuestService } = require("./services/questService");
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
 function readJson(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -112,68 +108,8 @@ function logServerError(store, req, error, userId = null) {
   });
 }
 
-function adminDebugSnapshot(store) {
-  return {
-    users: Array.from(store.users.values()).map((user) => {
-      const profile = store.profiles.get(user.id);
-      const loadouts = Array.from(store.loadouts.values()).filter((loadout) => loadout.playerId === user.id);
-      return {
-        id: user.id,
-        email: user.email,
-        displayName: profile?.displayName || user.id,
-        friendCode: profile?.friendCode || null,
-        coins: profile?.coins || 0,
-        activeLoadoutId: loadouts.find((loadout) => loadout.isActive)?.id || null,
-        loadoutCount: loadouts.length,
-        ownedCards: store.playerCards.get(user.id)?.size || 0,
-        createdAt: user.createdAt
-      };
-    }),
-    queues: clone(store.matchmakingQueues || { casual: [], ranked: [] }),
-    matches: Array.from(store.onlineMatches.values()).map((match) => ({
-      id: match.id,
-      mode: match.mode,
-      status: match.status,
-      winnerId: match.winnerId,
-      playerIds: match.playerIds,
-      turnNumber: match.state?.turnNumber,
-      activePlayerId: match.state?.activePlayerId,
-      eventCount: match.state?.eventLog?.length || 0,
-      connectedPlayerIds: Array.from(match.connectedPlayerIds || []),
-      createdAt: match.createdAt,
-      endedAt: match.endedAt
-    })),
-    challenges: Array.from(store.friendChallenges.values()),
-    errors: (store.errorLogs || []).slice(-50).reverse(),
-    bugReports: (store.bugReports || []).slice(-50).reverse()
-  };
-}
-
 function isDebugPersistenceEnabled() {
   return process.env.NODE_ENV !== "production" || process.env.ENABLE_ADMIN_DEBUG === "true";
-}
-
-function isAdminUser(userId) {
-  if (process.env.NODE_ENV !== "production" && process.env.ENABLE_ADMIN_DEBUG !== "false") return true;
-  const adminIds = (process.env.ADMIN_USER_IDS || "")
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
-  return adminIds.includes(userId);
-}
-
-function requireAdmin(userId) {
-  if (isAdminUser(userId)) return;
-  const error = new Error("Admin access is required for this reset action.");
-  error.status = 403;
-  throw error;
-}
-
-function requireConfirmation(actual, expected) {
-  if (actual === expected) return;
-  const error = new Error(`Confirmation required. Type ${expected} to continue.`);
-  error.status = 400;
-  throw error;
 }
 
 function persistenceDebugSnapshot(store) {
@@ -363,69 +299,6 @@ function createApp(options = {}) {
           throw error;
         }
         return sendJson(res, 200, persistenceDebugSnapshot(store));
-      }
-
-      if (path === "/admin/debug") {
-        if (req.method !== "GET") return methodNotAllowed(res);
-        return sendJson(res, 200, adminDebugSnapshot(store));
-      }
-
-      if (path === "/admin/reset-my-account") {
-        if (req.method !== "POST") return methodNotAllowed(res);
-        const body = await readJson(req);
-        requireConfirmation(body.confirmation, "RESET MY ACCOUNT");
-        store.resetPlayerAccount(user.id);
-        return sendJson(res, 200, {
-          profile: services.profiles.get(user.id),
-          collection: services.collection.list(user.id),
-          loadouts: services.loadouts.list(user.id)
-        });
-      }
-
-      if (path === "/admin/reset-user") {
-        if (req.method !== "POST") return methodNotAllowed(res);
-        requireAdmin(user.id);
-        const body = await readJson(req);
-        if (!body.userId) {
-          const error = new Error("userId is required.");
-          error.status = 400;
-          throw error;
-        }
-        requireConfirmation(body.confirmation, `RESET USER ${body.userId}`);
-        store.resetPlayerAccount(body.userId);
-        return sendJson(res, 200, {
-          profile: services.profiles.get(body.userId),
-          collection: services.collection.list(body.userId),
-          loadouts: services.loadouts.list(body.userId)
-        });
-      }
-
-      if (path === "/admin/reset-all-player-data") {
-        if (req.method !== "POST") return methodNotAllowed(res);
-        requireAdmin(user.id);
-        const body = await readJson(req);
-        requireConfirmation(body.confirmation, "RESET ALL PLAYER DATA");
-        return sendJson(res, 200, {
-          reset: store.resetAllPlayerData()
-        });
-      }
-
-      if (path === "/admin/reset-dev-account") {
-        if (req.method !== "POST") return methodNotAllowed(res);
-        const body = await readJson(req);
-        const targetUserId = body.userId || user.id;
-        if (targetUserId !== user.id) {
-          requireAdmin(user.id);
-          requireConfirmation(body.confirmation, `RESET USER ${targetUserId}`);
-        } else {
-          requireConfirmation(body.confirmation, "RESET MY ACCOUNT");
-        }
-        store.resetPlayerAccount(targetUserId);
-        return sendJson(res, 200, {
-          profile: services.profiles.get(targetUserId),
-          collection: services.collection.list(targetUserId),
-          loadouts: services.loadouts.list(targetUserId)
-        });
       }
 
       const onlineMatchGet = path.match(/^\/online-matches\/([^/]+)$/);

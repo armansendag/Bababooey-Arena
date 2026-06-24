@@ -52,3 +52,11 @@ test("loadout builder only shows and autofills owned cards", () => {
   assert.match(appSource, /No owned non-core cards yet/);
   assert.match(appSource, /\.filter\(\(\[cardId\]\) => \(owned\.get\(cardId\) \|\| 0\) > 0\)/);
 });
+
+test("frontend does not expose an admin panel", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.doesNotMatch(appSource, /\["admin", "A", "Admin"\]/);
+  assert.doesNotMatch(appSource, /function renderAdmin/);
+  assert.doesNotMatch(appSource, /\/admin\/reset/);
+});

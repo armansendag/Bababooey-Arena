@@ -228,7 +228,7 @@ test("new players can queue into a first online match with starter decks", () =>
   assert.equal(matched.match.state.players.length, 2);
 });
 
-test("admin debug captures bug reports and can reset dev account", () => {
+test("bug reports persist when a dev account is reset", () => {
   const app = createApp();
   const player = register(app, "debug@example.com", "Debugger");
   app.store.addCoinTransaction({ playerId: player.user.id, amount: -100, reason: "test_spend" });
