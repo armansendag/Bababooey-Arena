@@ -133,6 +133,14 @@ For Supabase, copy the project PostgreSQL connection string into `DATABASE_URL`.
 
 Friends connect by opening the Render public URL in their browser. The same URL serves the frontend, API, and WebSocket match connection.
 
+## Account Identity
+
+Alpha signup asks for only username, email, and password. Usernames are public, unique case-insensitively, 3-16 characters, and limited to letters, numbers, and underscores. Progress is tied to the account `userId`, including coins, collection, loadouts, pack openings, quests, friends, match history, ranked rating, and transactions.
+
+Email verification is intentionally disabled for alpha testing. The frontend keeps the existing session token in local storage so players stay logged in on that device. Players can change their username from Settings, but only once every 30 days.
+
+Friend codes remain unique. Friends can add each other by either public username or friend code.
+
 ## Persistence Verification
 
 Use this checklist after a production deploy:

@@ -23,11 +23,23 @@ test("frontend asks for username and renders full pack shop", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 
   assert.match(appSource, /placeholder="Username"/);
+  assert.match(appSource, /payload\.username = state\.authForm\.username/);
+  assert.match(appSource, /Remember me/);
   assert.match(appSource, /\/auth\/register/);
   assert.doesNotMatch(appSource, /\/prototype\/bootstrap", \{ method: "POST" \}/);
   assert.match(appSource, /state\.packs\.forEach/);
   assert.match(appSource, /Odds:/);
   assert.match(appSource, /Guaranteed:/);
+});
+
+test("frontend exposes username editing and friend lookup by username or code", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /data-username-edit/);
+  assert.match(appSource, /function updateUsername/);
+  assert.match(appSource, /Username or friend code/);
+  assert.match(appSource, /function addFriend/);
+  assert.match(appSource, /body: \{ identifier \}/);
 });
 
 test("pack openings render exciting on-screen rarity reveals", () => {

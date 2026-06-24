@@ -73,7 +73,7 @@ function createDemoAccount(services, store) {
   const account = services.auth.register({
     email,
     password: "prototype-password",
-    displayName: "Prototype Pilot"
+    username: `Prototype_${Date.now().toString().slice(-6)}`
   });
 
   const owned = store.playerCards.get(account.user.id);
@@ -253,7 +253,7 @@ function createApp(options = {}) {
         if (req.method === "GET") return sendJson(res, 200, services.friends.list(user.id));
         if (req.method === "POST") {
           const body = await readJson(req);
-          return sendJson(res, 201, services.friends.sendRequest(user.id, body.friendCode));
+          return sendJson(res, 201, services.friends.sendRequest(user.id, body.identifier || body.username || body.friendCode));
         }
         return methodNotAllowed(res);
       }

@@ -5,6 +5,8 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const { cards } = require("../src/data/cards");
 const { packs } = require("../src/data/packs");
+const { USERNAME_CHANGE_COOLDOWN_MS } = require("../src/services/profileService");
+const { createMemoryStore, serializeStore } = require("../src/store/memoryStore");
 
 function register(app, email, displayName) {
   return app.services.auth.register({
@@ -44,6 +46,8 @@ test("register creates a profile with starting coins and a friend code", () => {
   assert.match(result.profile.friendCode, /^BBY-[A-F0-9]{6}$/);
   assert.ok(result.token);
   assert.equal(result.profile.displayName, "Arman");
+  assert.equal(result.profile.username, "Arman");
+  assert.equal(result.profile.normalizedUsername, "arman");
   assert.deepEqual(result.profile.freePacks, { starter_pack: 3 });
   const loadouts = app.services.loadouts.list(result.user.id);
   assert.equal(loadouts.length, 1);
@@ -51,6 +55,74 @@ test("register creates a profile with starting coins and a friend code", () => {
   const owned = app.store.playerCards.get(result.user.id);
   assert.equal(owned.size < cards.length, true);
   assert.equal(Array.from(owned.keys()).filter((cardId) => app.store.cards.get(cardId).type === "core").length, 1);
+});
+
+test("cannot create duplicate username with different casing", () => {
+  const app = createApp();
+  register(app, "one@example.com", "Alpha_User");
+
+  assert.throws(
+    () => app.services.auth.register({ email: "two@example.com", password: "correct-horse-battery", username: "alpha_user" }),
+    /Username is already taken/
+  );
+});
+
+test("invalid usernames are rejected", () => {
+  const app = createApp();
+  for (const username of ["ab", "has space", "toolong_username_123", "bad-name"]) {
+    assert.throws(
+      () => app.services.auth.register({ email: `${username.replace(/[^a-z]/g, "") || "bad"}@example.com`, password: "correct-horse-battery", username }),
+      /Username must be 3-16/
+    );
+  }
+});
+
+test("user data persists by account username identity", () => {
+  const app = createApp();
+  const player = app.services.auth.register({ email: "persist-user@example.com", password: "correct-horse-battery", username: "Persist_User" });
+  app.store.addCoinTransaction({ playerId: player.user.id, amount: 25, reason: "test_reward" });
+
+  const restored = createMemoryStore({ snapshot: serializeStore(app.store) });
+  const user = restored.usersByUsername.get("persist_user");
+  assert.equal(user.id, player.user.id);
+  assert.equal(restored.profiles.get(player.user.id).coins, 1025);
+  assert.equal(restored.playerCards.has(player.user.id), true);
+  assert.equal(restored.loadouts.size, 1);
+});
+
+test("username change works and then respects cooldown", () => {
+  const app = createApp();
+  const player = register(app, "rename@example.com", "RenameMe");
+
+  const updated = app.services.profiles.update(player.user.id, { username: "Renamed_1" });
+  assert.equal(updated.username, "Renamed_1");
+  assert.equal(app.store.usersByUsername.get("renamed_1").id, player.user.id);
+  assert.equal(app.store.usersByUsername.has("renameme"), false);
+
+  assert.throws(
+    () => app.services.profiles.update(player.user.id, { username: "Renamed_2" }),
+    /once every 30 days/
+  );
+
+  const profile = app.store.profiles.get(player.user.id);
+  const user = app.store.users.get(player.user.id);
+  const oldEnough = new Date(Date.now() - USERNAME_CHANGE_COOLDOWN_MS - 1000).toISOString();
+  profile.usernameLastChangedAt = oldEnough;
+  user.usernameLastChangedAt = oldEnough;
+  assert.equal(app.services.profiles.update(player.user.id, { username: "Renamed_2" }).username, "Renamed_2");
+});
+
+test("friends can be found by username or friend code", () => {
+  const app = createApp();
+  const playerA = register(app, "friend-a@example.com", "FriendA");
+  const playerB = register(app, "friend-b@example.com", "FriendB");
+  const playerC = register(app, "friend-c@example.com", "FriendC");
+
+  const byUsername = app.services.friends.sendRequest(playerA.user.id, "friendb");
+  assert.equal(byUsername.addressee.username, "FriendB");
+
+  const byCode = app.services.friends.sendRequest(playerA.user.id, playerC.profile.friendCode);
+  assert.equal(byCode.addressee.username, "FriendC");
 });
 
 test("new accounts receive limited starter rewards, not the full catalog", () => {

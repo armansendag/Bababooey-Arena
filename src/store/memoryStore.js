@@ -6,6 +6,7 @@ const { packs } = require("../data/packs");
 const { quests } = require("../data/quests");
 const { BEGINNER_LOADOUT } = require("../data/starterLoadouts");
 const { STARTING_COINS } = require("../domain/economy");
+const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/;
 
 function nowIso() {
   return new Date().toISOString();
@@ -19,10 +20,56 @@ function mapFromEntries(entries) {
   return new Map(entries || []);
 }
 
+function normalizeUsername(username) {
+  return String(username || "").trim().toLowerCase();
+}
+
+function usernameSeed(value, fallback) {
+  const cleaned = String(value || fallback || "player").split("@")[0].replace(/[^A-Za-z0-9_]+/g, "_").replace(/^_+|_+$/g, "");
+  const compact = cleaned || "player";
+  const padded = compact.length < 3 ? `${compact}___`.slice(0, 3) : compact;
+  return padded.slice(0, 16);
+}
+
+function allocateUsername(base, used) {
+  const seed = usernameSeed(base, "player");
+  let candidate = seed;
+  let suffix = 1;
+  while (used.has(normalizeUsername(candidate)) || !USERNAME_PATTERN.test(candidate)) {
+    const tag = String(suffix);
+    candidate = `${seed.slice(0, Math.max(3, 16 - tag.length))}${tag}`;
+    suffix += 1;
+  }
+  used.add(normalizeUsername(candidate));
+  return candidate;
+}
+
+function rebuildUsernameIndex(store) {
+  const used = new Set();
+  store.usersByUsername = new Map();
+  for (const [userId, user] of store.users.entries()) {
+    const profile = store.profiles.get(userId);
+    const username = user.username || profile?.username || allocateUsername(profile?.displayName || user.email, used);
+    const normalizedUsername = normalizeUsername(username);
+    used.add(normalizedUsername);
+    user.username = username;
+    user.normalizedUsername = normalizedUsername;
+    if (!Object.prototype.hasOwnProperty.call(user, "usernameLastChangedAt")) user.usernameLastChangedAt = profile?.usernameLastChangedAt || null;
+    if (profile) {
+      profile.username = username;
+      profile.normalizedUsername = normalizedUsername;
+      profile.displayName = username;
+      if (!Object.prototype.hasOwnProperty.call(profile, "usernameLastChangedAt")) profile.usernameLastChangedAt = user.usernameLastChangedAt || null;
+    }
+    store.usersByUsername.set(normalizedUsername, user);
+  }
+}
+
 function serializeStore(store) {
   return {
     users: Array.from(store.users.entries()),
     usersByEmail: Array.from(store.usersByEmail.entries()),
+    usersByUsername: Array.from(store.usersByUsername.entries()),
     sessions: Array.from(store.sessions.entries()),
     profiles: Array.from(store.profiles.entries()),
     profilesByFriendCode: Array.from(store.profilesByFriendCode.entries()),
@@ -138,6 +185,7 @@ function resetProfileProgress(profile) {
 function clearAllPlayerState(store) {
   store.users.clear();
   store.usersByEmail.clear();
+  store.usersByUsername.clear();
   store.sessions.clear();
   store.profiles.clear();
   store.profilesByFriendCode.clear();
@@ -162,6 +210,7 @@ function hydrateStore(store, snapshot) {
   if (!snapshot) return;
   store.users = mapFromEntries(snapshot.users);
   store.usersByEmail = mapFromEntries(snapshot.usersByEmail);
+  store.usersByUsername = mapFromEntries(snapshot.usersByUsername);
   store.sessions = mapFromEntries(snapshot.sessions);
   store.profiles = mapFromEntries(snapshot.profiles);
   store.profilesByFriendCode = mapFromEntries(snapshot.profilesByFriendCode);
@@ -182,12 +231,14 @@ function hydrateStore(store, snapshot) {
   store.playerQuests = mapFromEntries(snapshot.playerQuests);
   store.errorLogs = snapshot.errorLogs || [];
   store.bugReports = snapshot.bugReports || [];
+  rebuildUsernameIndex(store);
 }
 
 function createMemoryStore(options = {}) {
   const store = {
     users: new Map(),
     usersByEmail: new Map(),
+    usersByUsername: new Map(),
     sessions: new Map(),
     profiles: new Map(),
     profilesByFriendCode: new Map(),
@@ -215,13 +266,27 @@ function createMemoryStore(options = {}) {
 
   hydrateStore(store, options.snapshot);
 
-  store.createUser = function createUser({ email, passwordHash, displayName, friendCode }) {
+  store.createUser = function createUser({ email, passwordHash, username, normalizedUsername, friendCode }) {
     const id = makeId();
     const createdAt = nowIso();
-    const user = { id, email: email.toLowerCase(), passwordHash, createdAt, lastSeenAt: null };
+    const cleanUsername = username || allocateUsername(email, new Set(store.usersByUsername.keys()));
+    const cleanNormalizedUsername = normalizedUsername || normalizeUsername(cleanUsername);
+    const user = {
+      id,
+      email: email.toLowerCase(),
+      passwordHash,
+      username: cleanUsername,
+      normalizedUsername: cleanNormalizedUsername,
+      usernameLastChangedAt: null,
+      createdAt,
+      lastSeenAt: null
+    };
     const profile = {
       userId: id,
-      displayName,
+      username: cleanUsername,
+      normalizedUsername: cleanNormalizedUsername,
+      usernameLastChangedAt: null,
+      displayName: cleanUsername,
       friendCode,
       coins: STARTING_COINS,
       selectedCoreCardId: "core_starter",
@@ -233,6 +298,7 @@ function createMemoryStore(options = {}) {
 
     store.users.set(id, user);
     store.usersByEmail.set(user.email, user);
+    store.usersByUsername.set(user.normalizedUsername, user);
     store.profiles.set(id, profile);
     store.profilesByFriendCode.set(friendCode, profile);
     seedStarterDeck(store, id, { replaceLoadouts: true });

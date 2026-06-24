@@ -1,10 +1,12 @@
 "use strict";
 
 const { makeId, nowIso } = require("../store/memoryStore");
+const { normalizeUsername } = require("./authService");
 
 function publicProfile(profile) {
   return {
     userId: profile.userId,
+    username: profile.username || profile.displayName,
     displayName: profile.displayName,
     friendCode: profile.friendCode
   };
@@ -20,9 +22,18 @@ function createFriendService(store) {
     });
   }
 
-  function sendRequest(playerId, friendCode) {
-    const target = store.profilesByFriendCode.get(String(friendCode || "").trim().toUpperCase());
-    if (!target) throw Object.assign(new Error("Friend code not found."), { status: 404 });
+  function findTarget(identifier) {
+    const value = String(identifier || "").trim();
+    if (!value) return null;
+    const byCode = store.profilesByFriendCode.get(value.toUpperCase());
+    if (byCode) return byCode;
+    const user = store.usersByUsername?.get(normalizeUsername(value));
+    return user ? store.profiles.get(user.id) : null;
+  }
+
+  function sendRequest(playerId, identifier) {
+    const target = findTarget(identifier);
+    if (!target) throw Object.assign(new Error("Player not found by username or friend code."), { status: 404 });
     if (target.userId === playerId) throw Object.assign(new Error("Cannot friend yourself."), { status: 400 });
     const existing = existingPair(playerId, target.userId);
     if (existing) return serialize(existing);

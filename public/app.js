@@ -10,8 +10,9 @@
     authForm: {
       email: "",
       password: "",
-      displayName: ""
+      username: ""
     },
+    friendIdentifier: "",
     cards: [],
     collection: [],
     quests: [],
@@ -427,6 +428,7 @@
     const panel = el("section", "modal-panel settings-panel");
     panel.innerHTML = `
       <h2>Settings</h2>
+      <label class="setting-row"><span>Username<span class="small">3-16 letters, numbers, or underscores. Changes are limited to once every 30 days.</span></span><input data-username-edit value="${escapeHtml(state.profile?.username || state.profile?.displayName || "")}"></label>
       <label class="setting-row"><span>Sound</span><input type="checkbox" data-setting="sound" ${state.settings.sound ? "checked" : ""}></label>
       <label class="setting-row"><span>Reduced motion</span><input type="checkbox" data-setting="reducedMotion" ${state.settings.reducedMotion ? "checked" : ""}></label>
       <label class="setting-row"><span>Animation speed</span><select data-setting="animationSpeed">
@@ -441,6 +443,11 @@
         state.settings[key] = control.type === "checkbox" ? control.checked : control.value;
         render();
       });
+    });
+    const usernameInput = panel.querySelector("[data-username-edit]");
+    usernameInput.addEventListener("change", () => updateUsername(usernameInput.value));
+    usernameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") updateUsername(usernameInput.value);
     });
     panel.appendChild(el("div", "setting-row danger-zone", `
       <span><strong>Reset my stats</strong><span class="small">Coins, collection, loadouts, quests, ratings, friends, and match history reset to starter state.</span></span>
@@ -480,6 +487,17 @@
       await refreshOnlineData();
       state.view = "home";
       state.message = "Your stats were reset to the starter account state.";
+      render();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function updateUsername(username) {
+    try {
+      state.profile = await api("/me", { method: "PATCH", body: { username } });
+      state.message = "Username updated.";
+      await refreshOnlineData();
       render();
     } catch (error) {
       setMessage(error.message);
@@ -549,7 +567,7 @@
     onboarding.appendChild(iconButton("L", "Open Loadouts", false, () => setView("loadout")));
     page.appendChild(onboarding);
     const stats = el("div", "grid three");
-    stats.appendChild(el("section", "section", `<h2>Profile</h2><div class="pill-row"><span class="pill">${escapeHtml(state.profile?.displayName || "Demo")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`));
+    stats.appendChild(el("section", "section", `<h2>Profile</h2><div class="pill-row"><span class="pill">@${escapeHtml(state.profile?.username || state.profile?.displayName || "Demo")}</span><span class="pill">${escapeHtml(state.profile?.friendCode || "")}</span><span class="pill">${state.profile?.coins ?? 0} coins</span></div>`));
     stats.appendChild(el("section", "section", `<h2>Collection</h2><div class="pill-row"><span class="pill">${state.collection.filter((item) => item.ownedCount > 0).length} owned cards</span><span class="pill">${state.cards.length} catalog cards</span></div>`));
     stats.appendChild(el("section", "section", `<h2>Battle</h2><div class="pill-row"><span class="pill">${state.match ? "Match ready" : "No match"}</span><span class="pill">${state.match?.status || "idle"}</span></div>`));
     page.appendChild(stats);
@@ -827,10 +845,11 @@
       <h1>Bababooey Arena</h1>
       <p class="small">Create an account or log in. Your username, collection, coins, loadouts, and match history are saved.</p>
       <div class="grid">
+        ${state.authMode === "register" ? `<input data-auth="username" placeholder="Username" value="${escapeHtml(state.authForm.username)}">` : ""}
         <input data-auth="email" placeholder="Email" value="${escapeHtml(state.authForm.email)}">
         <input data-auth="password" placeholder="Password" type="password" value="${escapeHtml(state.authForm.password)}">
-        ${state.authMode === "register" ? `<input data-auth="displayName" placeholder="Username" value="${escapeHtml(state.authForm.displayName)}">` : ""}
       </div>
+      <label class="setting-row"><span>Remember me<span class="small">This device keeps your session token in local storage.</span></span><input type="checkbox" checked disabled></label>
       <div class="toolbar" style="margin-top: 12px;">
         <button data-auth-submit>${state.authMode === "register" ? "Create Account" : "Log In"}</button>
         <button data-auth-toggle>${state.authMode === "register" ? "I already have an account" : "Create a new account"}</button>
@@ -858,7 +877,7 @@
         email: state.authForm.email,
         password: state.authForm.password
       };
-      if (state.authMode === "register") payload.displayName = state.authForm.displayName;
+      if (state.authMode === "register") payload.username = state.authForm.username;
       const account = await api(endpoint, { method: "POST", body: payload });
       state.token = account.token;
       localStorage.setItem("bababooey_token", account.token);
@@ -912,6 +931,7 @@
       <h2>Friend Testing Flow</h2>
       <div class="onboarding-steps">
         <div><strong>Use your friend code</strong><span class="small">Share ${escapeHtml(state.profile?.friendCode || "your code")} with a friend, then accept the request.</span></div>
+        <div><strong>Add friends</strong><span class="small">Search by username or friend code. Your username is @${escapeHtml(state.profile?.username || state.profile?.displayName || "you")}.</span></div>
         <div><strong>Challenge or queue</strong><span class="small">Starter Decks are active by default, so new players can play immediately.</span></div>
         <div><strong>Report issues</strong><span class="small">Use Report Bug during or after a match so the debug panel captures the match context.</span></div>
       </div>
@@ -967,12 +987,25 @@
 
     const friends = el("section", "section");
     friends.appendChild(el("h2", "", "Friends"));
+    const addFriendRow = el("div", "toolbar");
+    const friendInput = el("input", "", "");
+    friendInput.placeholder = "Username or friend code";
+    friendInput.value = state.friendIdentifier;
+    friendInput.addEventListener("input", () => {
+      state.friendIdentifier = friendInput.value;
+    });
+    friendInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addFriend();
+    });
+    addFriendRow.appendChild(friendInput);
+    addFriendRow.appendChild(iconButton("+", "Add Friend", false, addFriend));
+    friends.appendChild(addFriendRow);
     const friendRows = el("div", "selected-list");
     const acceptedFriends = state.friends.filter((friendship) => friendship.status === "accepted");
     if (!acceptedFriends.length) friendRows.appendChild(el("div", "empty", "No accepted friends yet."));
     acceptedFriends.forEach((friendship) => {
       const friend = friendship.requester.userId === state.profile?.userId ? friendship.addressee : friendship.requester;
-      const row = el("div", "selected-row", `<strong>${escapeHtml(friend.displayName)}</strong><span class="small">${escapeHtml(friend.friendCode)}</span>`);
+      const row = el("div", "selected-row", `<strong>@${escapeHtml(friend.username || friend.displayName)}</strong><span class="small">${escapeHtml(friend.friendCode)}</span>`);
       row.appendChild(iconButton("C", "Challenge", false, () => sendChallenge(friend.userId)));
       friendRows.appendChild(row);
     });
@@ -1031,6 +1064,21 @@
     api("/queue/cancel", { method: "POST" })
       .then((queue) => {
         state.queueStatus = queue;
+        return refreshOnlineData();
+      })
+      .then(render)
+      .catch((error) => setMessage(error.message));
+  }
+
+  function addFriend() {
+    const identifier = state.friendIdentifier.trim();
+    if (!identifier) {
+      setMessage("Enter a username or friend code.");
+      return;
+    }
+    api("/friends", { method: "POST", body: { identifier } })
+      .then(() => {
+        state.friendIdentifier = "";
         return refreshOnlineData();
       })
       .then(render)

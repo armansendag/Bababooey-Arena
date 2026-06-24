@@ -1,6 +1,7 @@
 "use strict";
 
 const crypto = require("crypto");
+const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/;
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
   const hash = crypto.pbkdf2Sync(password, salt, 210000, 32, "sha256").toString("hex");
@@ -22,10 +23,44 @@ function makeFriendCode(store) {
   throw new Error("Unable to allocate friend code.");
 }
 
+function normalizeUsername(username) {
+  return String(username || "").trim().toLowerCase();
+}
+
+function validateUsername(username) {
+  const value = String(username || "").trim();
+  if (!USERNAME_PATTERN.test(value)) {
+    const error = new Error("Username must be 3-16 characters and use only letters, numbers, and underscores.");
+    error.status = 400;
+    throw error;
+  }
+  return value;
+}
+
+function deriveUsername(value) {
+  const cleaned = String(value || "player").split("@")[0].replace(/[^A-Za-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "player";
+  return (cleaned.length < 3 ? `${cleaned}___`.slice(0, 3) : cleaned).slice(0, 16);
+}
+
+function allocateUsername(store, requested) {
+  const seed = deriveUsername(requested);
+  let candidate = seed;
+  let suffix = 1;
+  while (store.usersByUsername?.has(normalizeUsername(candidate))) {
+    const tag = String(suffix);
+    candidate = `${seed.slice(0, Math.max(3, 16 - tag.length))}${tag}`;
+    suffix += 1;
+  }
+  return candidate;
+}
+
 function sanitizeProfile(profile) {
   return {
     userId: profile.userId,
-    displayName: profile.displayName,
+    username: profile.username || profile.displayName,
+    normalizedUsername: profile.normalizedUsername || normalizeUsername(profile.username || profile.displayName),
+    usernameLastChangedAt: profile.usernameLastChangedAt || null,
+    displayName: profile.username || profile.displayName,
     friendCode: profile.friendCode,
     coins: profile.coins,
     selectedCoreCardId: profile.selectedCoreCardId,
@@ -37,21 +72,24 @@ function sanitizeProfile(profile) {
 }
 
 function createAuthService(store) {
-  function register({ email, password, displayName }) {
+  function register({ email, password, username, displayName }) {
     const normalizedEmail = String(email || "").trim().toLowerCase();
+    const cleanUsername = username ? validateUsername(username) : allocateUsername(store, displayName || normalizedEmail);
+    const normalizedUsername = normalizeUsername(cleanUsername);
     if (!normalizedEmail.includes("@")) throw Object.assign(new Error("Valid email is required."), { status: 400 });
     if (String(password || "").length < 8) throw Object.assign(new Error("Password must be at least 8 characters."), { status: 400 });
-    if (!displayName || String(displayName).trim().length < 2) throw Object.assign(new Error("Display name is required."), { status: 400 });
     if (store.usersByEmail.has(normalizedEmail)) throw Object.assign(new Error("Email is already registered."), { status: 409 });
+    if (store.usersByUsername?.has(normalizedUsername)) throw Object.assign(new Error("Username is already taken."), { status: 409 });
 
     const { user, profile } = store.createUser({
       email: normalizedEmail,
       passwordHash: hashPassword(password),
-      displayName: String(displayName).trim(),
+      username: cleanUsername,
+      normalizedUsername,
       friendCode: makeFriendCode(store)
     });
     const token = createSession(user.id);
-    return { token, user: { id: user.id, email: user.email }, profile: sanitizeProfile(profile) };
+    return { token, user: { id: user.id, email: user.email, username: user.username }, profile: sanitizeProfile(profile) };
   }
 
   function createSession(userId) {
@@ -66,7 +104,7 @@ function createAuthService(store) {
       throw Object.assign(new Error("Invalid email or password."), { status: 401 });
     }
     const token = createSession(user.id);
-    return { token, user: { id: user.id, email: user.email }, profile: sanitizeProfile(store.profiles.get(user.id)) };
+    return { token, user: { id: user.id, email: user.email, username: user.username }, profile: sanitizeProfile(store.profiles.get(user.id)) };
   }
 
   function authenticate(headers) {
@@ -83,4 +121,4 @@ function createAuthService(store) {
   return { register, login, authenticate, sanitizeProfile };
 }
 
-module.exports = { createAuthService, hashPassword, verifyPassword };
+module.exports = { createAuthService, hashPassword, normalizeUsername, validateUsername, verifyPassword };

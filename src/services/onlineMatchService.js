@@ -26,6 +26,7 @@ function publicProfile(store, userId) {
   const profile = store.profiles.get(userId);
   return {
     userId,
+    username: profile?.username || profile?.displayName || userId,
     displayName: profile?.displayName || userId,
     friendCode: profile?.friendCode || null
   };

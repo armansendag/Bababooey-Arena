@@ -10,8 +10,9 @@ Authorization: Bearer <token>
 
 - `GET /health`
 - `POST /auth/register`
-  - body: `{ "email": "...", "password": "...", "displayName": "..." }`
-  - creates a saved username/display name, 1000 coins, 3 free Starter Packs, 1 free Core, and one legal Beginner Starter loadout
+  - body: `{ "username": "...", "email": "...", "password": "..." }`
+  - creates a unique public username, 1000 coins, 3 free Starter Packs, 1 free Core, and one legal Beginner Starter loadout
+  - usernames are case-insensitively unique, 3-16 characters, and allow only letters, numbers, and underscores
   - does not grant the full card catalog
 - `POST /auth/login`
   - body: `{ "email": "...", "password": "..." }`
@@ -20,7 +21,8 @@ Authorization: Bearer <token>
 
 - `GET /me`
 - `PATCH /me`
-  - body: `{ "displayName": "...", "selectedCoreCardId": "core_starter" }`
+  - body: `{ "username": "...", "selectedCoreCardId": "core_starter" }`
+  - username changes are limited to once every 30 days
 
 ## Cards and Collection
 
@@ -31,7 +33,8 @@ Authorization: Bearer <token>
 
 - `GET /friends`
 - `POST /friends`
-  - body: `{ "friendCode": "BBY-ABC123" }`
+  - body: `{ "identifier": "username-or-BBY-code" }`
+  - `friendCode`, `username`, and `identifier` request fields are accepted for compatibility
 - `POST /friends/:id/accept`
 - `POST /friends/:id/decline`
 
