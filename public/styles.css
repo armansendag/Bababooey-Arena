@@ -226,7 +226,7 @@ button:disabled {
 
 .card-head {
   display: grid;
-  grid-template-columns: 34px 1fr;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: start;
 }
@@ -245,7 +245,7 @@ button:disabled {
 .card-name {
   font-weight: 800;
   line-height: 1.15;
-  padding-right: 56px;
+  overflow-wrap: anywhere;
 }
 
 .label {
@@ -443,8 +443,9 @@ button:disabled {
 
 .filter-grid {
   display: grid;
-  grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(120px, 1fr));
+  grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(120px, 1fr)) minmax(120px, auto);
   gap: 8px;
+  align-items: stretch;
 }
 
 .filter-grid input,
@@ -455,6 +456,29 @@ button:disabled {
   background: #11141a;
   color: var(--text);
   padding: 9px 10px;
+}
+
+.checkbox-filter {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #11141a;
+  color: var(--muted);
+  padding: 9px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.checkbox-filter input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+}
+
+.loadout-sort-toggle {
+  margin-bottom: 10px;
 }
 
 .battle-action-bar {
@@ -712,15 +736,16 @@ button:disabled {
 }
 
 .rarity-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
   z-index: 2;
   border: 1px solid color-mix(in srgb, var(--rarity, var(--line)), white 38%);
   border-radius: 999px;
   background: rgba(10, 12, 16, .84);
   color: #fff7d8;
   padding: 4px 8px;
+  justify-self: end;
+  max-width: 82px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
   font-size: 10px;
   font-weight: 900;

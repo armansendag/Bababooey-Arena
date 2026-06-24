@@ -36,8 +36,10 @@
       type: "all",
       faction: "all",
       rarity: "all",
-      maxCost: "all"
+      maxCost: "all",
+      ownedFirst: false
     },
+    loadoutOwnedFirst: false,
     match: null,
     battleMode: "local",
     battlePhase: "start",
@@ -222,6 +224,20 @@
 
   function rarityRank(rarity) {
     return ["common", "uncommon", "rare", "epic", "legendary", "mythic", "bababooey"].indexOf(rarity);
+  }
+
+  function sortedCards(items, options = {}) {
+    return [...items].sort((a, b) => {
+      if (options.ownedFirst) {
+        const ownedDelta = Number((b.ownedCount || 0) > 0) - Number((a.ownedCount || 0) > 0);
+        if (ownedDelta !== 0) return ownedDelta;
+      }
+      const rarityDelta = rarityRank(b.rarity) - rarityRank(a.rarity);
+      if (rarityDelta !== 0) return rarityDelta;
+      const costDelta = (a.manaCost || 0) - (b.manaCost || 0);
+      if (costDelta !== 0) return costDelta;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
   }
 
   function friendlyEvent(event) {
@@ -483,13 +499,13 @@
     stats.push(`<span class="stat">CD ${cardData.cooldown}</span>`);
     node.innerHTML = `
       <div class="rarity-frame"></div>
-      <div class="rarity-badge">${escapeHtml(cardData.rarity || "common")}</div>
       <div class="card-head">
         <div class="mana">${cardData.manaCost}</div>
         <div>
           <div class="card-name">${escapeHtml(cardData.name)}</div>
           <div class="label"><span class="type-icon">${typeIcon(cardData.type)}</span> ${escapeHtml(cardData.type)}</div>
         </div>
+        <div class="rarity-badge">${escapeHtml(cardData.rarity || "common")}</div>
       </div>
       <div class="faction-label">${escapeHtml(cardData.faction || "neutral")}</div>
       <div class="small">${escapeHtml((cardData.perks || []).join(" | "))}</div>
@@ -587,15 +603,18 @@
           <option value="all">Any cost</option>
           ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => `<option value="${value}" ${String(filters.maxCost) === String(value) ? "selected" : ""}>${value} or less</option>`).join("")}
         </select>
+        <label class="checkbox-filter"><input data-card-filter="ownedFirst" type="checkbox" ${filters.ownedFirst ? "checked" : ""}> Owned first</label>
       </div>
     `;
     panel.querySelectorAll("[data-card-filter]").forEach((control) => {
       control.addEventListener("input", () => {
-        state.cardFilters[control.getAttribute("data-card-filter")] = control.value;
+        const key = control.getAttribute("data-card-filter");
+        state.cardFilters[key] = control.type === "checkbox" ? control.checked : control.value;
         render();
       });
       control.addEventListener("change", () => {
-        state.cardFilters[control.getAttribute("data-card-filter")] = control.value;
+        const key = control.getAttribute("data-card-filter");
+        state.cardFilters[key] = control.type === "checkbox" ? control.checked : control.value;
         render();
       });
     });
@@ -605,14 +624,14 @@
   function filteredCollection() {
     const filters = state.cardFilters;
     const query = filters.query.trim().toLowerCase();
-    return state.collection.filter((item) => {
+    return sortedCards(state.collection.filter((item) => {
       if (filters.type !== "all" && item.type !== filters.type) return false;
       if (filters.faction !== "all" && item.faction !== filters.faction) return false;
       if (filters.rarity !== "all" && item.rarity !== filters.rarity) return false;
       if (filters.maxCost !== "all" && item.manaCost > Number(filters.maxCost)) return false;
       if (!query) return true;
       return `${item.name} ${(item.perks || []).join(" ")}`.toLowerCase().includes(query);
-    });
+    }), { ownedFirst: filters.ownedFirst });
   }
 
   function draftCount(cardId) {
@@ -672,8 +691,14 @@
     const layout = el("div", "builder");
     const cardPanel = el("section", "section");
     cardPanel.appendChild(el("h2", "", "Available Cards"));
+    const sortToggle = el("label", "checkbox-filter loadout-sort-toggle", `<input data-loadout-owned-first type="checkbox" ${state.loadoutOwnedFirst ? "checked" : ""}> Owned first`);
+    sortToggle.querySelector("[data-loadout-owned-first]").addEventListener("change", (event) => {
+      state.loadoutOwnedFirst = event.target.checked;
+      render();
+    });
+    cardPanel.appendChild(sortToggle);
     const grid = el("div", "card-grid");
-    const ownedLoadoutCards = state.collection.filter((item) => item.type !== "core" && item.ownedCount > 0);
+    const ownedLoadoutCards = sortedCards(state.collection.filter((item) => item.type !== "core" && item.ownedCount > 0), { ownedFirst: state.loadoutOwnedFirst });
     ownedLoadoutCards.forEach((item) => {
       grid.appendChild(renderCard(item, {
         actions: [

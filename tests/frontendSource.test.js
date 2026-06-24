@@ -47,10 +47,32 @@ test("pack openings render exciting on-screen rarity reveals", () => {
 test("loadout builder only shows and autofills owned cards", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 
-  assert.match(appSource, /ownedLoadoutCards = state\.collection\.filter\(\(item\) => item\.type !== "core" && item\.ownedCount > 0\)/);
+  assert.match(appSource, /ownedLoadoutCards = sortedCards\(state\.collection\.filter\(\(item\) => item\.type !== "core" && item\.ownedCount > 0\)/);
   assert.match(appSource, /ownedLoadoutCards\.forEach/);
   assert.match(appSource, /No owned non-core cards yet/);
   assert.match(appSource, /\.filter\(\(\[cardId\]\) => \(owned\.get\(cardId\) \|\| 0\) > 0\)/);
+});
+
+test("collection and loadout card menus sort by rarity with owned-first toggles", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /function sortedCards/);
+  assert.match(appSource, /rarityRank\(b\.rarity\) - rarityRank\(a\.rarity\)/);
+  assert.match(appSource, /data-card-filter="ownedFirst"/);
+  assert.match(appSource, /data-loadout-owned-first/);
+  assert.match(cssSource, /\.checkbox-filter/);
+});
+
+test("rarity badge has dedicated header space instead of covering card names", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /<div class="card-name">/);
+  assert.match(appSource, /<div class="rarity-badge">/);
+  assert.match(cssSource, /grid-template-columns:\s*34px minmax\(0, 1fr\) auto/);
+  assert.doesNotMatch(cssSource, /\.rarity-badge\s*\{[^}]*position:\s*absolute/s);
+  assert.doesNotMatch(cssSource, /padding-right:\s*56px/);
 });
 
 test("frontend does not expose an admin panel", () => {
