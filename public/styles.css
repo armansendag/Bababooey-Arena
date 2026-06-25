@@ -228,8 +228,15 @@ button:disabled {
 .card-head {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
-  gap: 8px;
+  grid-template-areas:
+    "mana spacer rarity"
+    "name name name";
+  gap: 7px 8px;
   align-items: start;
+}
+
+.card-head .mana {
+  grid-area: mana;
 }
 
 .mana {
@@ -244,9 +251,12 @@ button:disabled {
 }
 
 .card-name {
+  grid-area: name;
   font-weight: 800;
   line-height: 1.15;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  min-height: 2.3em;
 }
 
 .label {
@@ -737,6 +747,7 @@ button:disabled {
 }
 
 .rarity-badge {
+  grid-area: rarity;
   z-index: 2;
   border: 1px solid color-mix(in srgb, var(--rarity, var(--line)), white 38%);
   border-radius: 999px;

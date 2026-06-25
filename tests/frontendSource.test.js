@@ -91,7 +91,8 @@ test("rarity badge has dedicated header space instead of covering card names", (
 
   assert.match(appSource, /<div class="card-name">/);
   assert.match(appSource, /<div class="rarity-badge">/);
-  assert.match(cssSource, /grid-template-columns:\s*34px minmax\(0, 1fr\) auto/);
+  assert.match(cssSource, /grid-template-areas:\s*"mana spacer rarity"\s*"name name name"/);
+  assert.match(cssSource, /grid-area:\s*name/);
   assert.doesNotMatch(cssSource, /\.rarity-badge\s*\{[^}]*position:\s*absolute/s);
   assert.doesNotMatch(cssSource, /padding-right:\s*56px/);
 });
