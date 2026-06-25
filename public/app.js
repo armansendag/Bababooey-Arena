@@ -237,6 +237,10 @@
     }[type] || "?";
   }
 
+  function cardDescription(cardData) {
+    return cardData.rulesText || cardData.text || (cardData.perks || []).join(" | ") || "No special rules.";
+  }
+
   function rarityRank(rarity) {
     return ["common", "uncommon", "rare", "epic", "legendary", "mythic", "bababooey"].indexOf(rarity);
   }
@@ -334,7 +338,10 @@
     app.innerHTML = "";
     const root = el("div", `app ${motionClass()}`);
     const sidebar = el("aside", "sidebar");
-    sidebar.appendChild(el("div", "brand", `<div class="brand-title">Bababooey Arena</div><div class="brand-sub">Local prototype</div>`));
+    sidebar.appendChild(el("div", "brand", `
+      <img class="brand-logo" src="/assets/fairs-logo.jpg" alt="Bababooey Arena logo">
+      <div><div class="brand-title">Bababooey Arena</div><div class="brand-sub">Local prototype</div></div>
+    `));
     const nav = el("div", "nav");
     for (const [view, symbol, label] of navItems) {
       const button = iconButton(symbol, label, false, () => setView(view));
@@ -401,7 +408,11 @@
         <span class="stat">Cooldown ${cardData.cooldown}</span>
         <span class="stat">Copy ${escapeHtml(cardData.copyTag || "standard")}</span>
       </div>
-      <p>${escapeHtml((cardData.perks || []).join(" | ") || "No perks.")}</p>
+      <div class="detail-rules">
+        <h3>What it does</h3>
+        <p>${escapeHtml(cardDescription(cardData))}</p>
+      </div>
+      ${(cardData.perks || []).length ? `<p class="small">Tags: ${escapeHtml((cardData.perks || []).join(" | "))}</p>` : ""}
     `;
     if (modal) {
       panel.appendChild(iconButton("X", "Close", false, () => {
@@ -577,6 +588,8 @@
     if (cardData.defense !== undefined) stats.push(`<span class="stat">DEF ${cardData.defense}</span>`);
     if (cardData.hp !== undefined) stats.push(`<span class="stat">HP ${cardData.hp}</span>`);
     stats.push(`<span class="stat">CD ${cardData.cooldown}</span>`);
+    const description = cardDescription(cardData);
+    const needsMore = description.length > 150;
     node.innerHTML = `
       <div class="rarity-frame"></div>
       <div class="card-head">
@@ -588,9 +601,19 @@
         <div class="rarity-badge">${escapeHtml(cardData.rarity || "common")}</div>
       </div>
       <div class="faction-label">${escapeHtml(cardData.faction || "neutral")}</div>
-      <div class="small">${escapeHtml((cardData.perks || []).join(" | "))}</div>
+      <div class="card-description">${escapeHtml(description)}</div>
+      ${needsMore ? `<button class="show-more" data-show-more>Show more</button>` : ""}
       <div class="stats">${stats.join("")}</div>
     `;
+    const showMore = node.querySelector("[data-show-more]");
+    if (showMore) {
+      showMore.addEventListener("pointerdown", (event) => event.stopPropagation());
+      showMore.addEventListener("click", (event) => {
+        event.stopPropagation();
+        state.detailCard = cardData;
+        render();
+      });
+    }
     if (options.actions) {
       const actions = el("div", "card-actions");
       options.actions.forEach((action) => actions.appendChild(action));
@@ -613,7 +636,8 @@
     const page = el("div", "grid");
     page.appendChild(titleBar("Home"));
     page.appendChild(el("section", "hero", `
-      <h1>Battlefield: Codex</h1>
+      <img class="hero-logo" src="/assets/fairs-logo.jpg" alt="Bababooey Arena logo">
+      <h1>Bababooey Arena</h1>
       <p>Your account starts with a legal beginner deck, 1000 coins, and three free Starter Packs. Build the rest over time.</p>
     `));
     const onboarding = el("section", "section onboarding-panel");
@@ -705,7 +729,7 @@
       if (filters.rarity !== "all" && item.rarity !== filters.rarity) return false;
       if (filters.maxCost !== "all" && item.manaCost > Number(filters.maxCost)) return false;
       if (!query) return true;
-      return `${item.name} ${(item.perks || []).join(" ")}`.toLowerCase().includes(query);
+      return `${item.name} ${(item.perks || []).join(" ")} ${cardDescription(item)}`.toLowerCase().includes(query);
     }), { ownedFirst: filters.ownedFirst });
   }
 
@@ -904,6 +928,7 @@
     const page = el("main", "main");
     const panel = el("section", "section");
     panel.innerHTML = `
+      <img class="auth-logo" src="/assets/fairs-logo.jpg" alt="Bababooey Arena logo">
       <h1>Bababooey Arena</h1>
       <p class="small">Create an account or log in. Your username, collection, coins, loadouts, and match history are saved.</p>
       <div class="grid">

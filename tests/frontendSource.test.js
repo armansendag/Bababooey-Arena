@@ -97,6 +97,27 @@ test("rarity badge has dedicated header space instead of covering card names", (
   assert.doesNotMatch(cssSource, /padding-right:\s*56px/);
 });
 
+test("meme beta UI uses Bababooey branding, logo, and expandable card rules", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.doesNotMatch(appSource, /Battlefield: Codex/);
+  assert.match(appSource, /Bababooey Arena/);
+  assert.match(appSource, /fairs-logo\.jpg/);
+  assert.match(appSource, /function cardDescription/);
+  assert.match(appSource, /cardData\.rulesText/);
+  assert.match(appSource, /class="card-description"/);
+  assert.match(appSource, /data-show-more/);
+  assert.match(appSource, /Show more/);
+  assert.match(appSource, /cardDescription\(item\)/);
+  assert.match(cssSource, /\.brand-logo/);
+  assert.match(cssSource, /\.hero-logo/);
+  assert.match(cssSource, /\.auth-logo/);
+  assert.match(cssSource, /\.card-description/);
+  assert.match(cssSource, /-webkit-line-clamp:\s*4/);
+  assert.match(cssSource, /\.show-more/);
+});
+
 test("frontend does not expose an admin panel", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 

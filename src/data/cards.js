@@ -335,10 +335,249 @@ const cardEffects = {
   core_memeborn: [{ trigger: "onSpellCast", type: "manaGainForFaction", faction: "memeborn", amount: 1, temporary: true }]
 };
 
+const memeCardNames = {
+  core_starter: "Plain Toast Core",
+  core_aggro: "Bonk Alarm Core",
+  core_ramp: "Big Snack Core",
+  core_control: "No Fun Allowed Core",
+  core_beast: "Bark Mode Core",
+  core_machine: "Toaster Palace Core",
+  core_undead: "Oops All Bones Core",
+  core_memeborn: "Bababooey Core Deluxe",
+  troop_enchantment_eater: "Contract Gobbler",
+  troop_neutral_frontline_recruit: "Intern With A Pan",
+  troop_neutral_banner_squire: "Flag Boy Supreme",
+  troop_neutral_shield_captain: "Captain Door Shield",
+  troop_neutral_arena_bruiser: "Parking Lot Larry",
+  troop_neutral_veteran_duelist: "Uncle Parry",
+  troop_neutral_relic_warden: "Museum Bouncer",
+  troop_neutral_colossus_handler: "Big Tony Handler",
+  troop_neutral_ancient_sentinel: "Grandpa Statue",
+  troop_neutral_worldbreaker: "The Debt Collector",
+  troop_mana_goblin: "Quandale Dingle",
+  troop_mana_slime: "Liquidity Squish",
+  troop_mana_sprout_channeler: "Beanstalk Accountant",
+  troop_mana_lotus_adept: "Budget Yoga Wizard",
+  troop_mana_golem: "ATM With Legs",
+  troop_mana_crystal_herder: "Crystal Dad",
+  troop_mana_leyline_giant: "Extension Cord Giant",
+  troop_mana_overgrowth_titan: "Lawn Violation Titan",
+  troop_mana_dragon: "Tax Refund Dragon",
+  troop_mana_worldroot_avatar: "Big Tree Receipt",
+  troop_arcane_rune_apprentice: "Spelling Bee Menace",
+  troop_arcane_glyph_scout: "Tiny Rune Snitch",
+  troop_arcane_hunter: "Magic Hall Monitor",
+  troop_arcane_spellblade_adept: "Mall Ninja Wizard",
+  troop_arcane_mirror_savant: "Selfie Sorcerer",
+  troop_arcane_nullmage_guard: "Ctrl Z Security",
+  troop_arcane_astral_binder: "Cosmic Zip Tie",
+  troop_arcane_chrono_oracle: "Microwave Prophet",
+  troop_arcane_prism_archon: "Rainbow Principal",
+  troop_arcane_reality_editor: "Photoshop Wizard",
+  troop_tech_socket_runner: "USB Speed Goblin",
+  troop_tech_wrench_rookie: "Lil Wrenchy",
+  troop_tech_gearwright: "Gear Gremlin Guy",
+  troop_tech_pulse_trooper: "Bluetooth Bonker",
+  troop_demolition_bot: "Roomba With Charges",
+  troop_tech_railgunner: "Train Horn Chad",
+  troop_tech_siege_mechanic: "IKEA Siege Expert",
+  troop_tech_turbo_exo_suit: "Turbo Pajama Suit",
+  troop_tech_orbital_engineer: "Satellite Nephew",
+  troop_tech_doomsday_prototype: "Oops Button 9000",
+  troop_beast_pouncing_cub: "Sneaky Cheddar Cub",
+  troop_beast_fang_pup: "Bitey Chihuahua",
+  troop_beast_river_raptor: "Wet Chicken Raptor",
+  troop_beast_horned_charger: "Shopping Cart Rhino",
+  troop_beast_pack_alpha: "Alpha Lunch Monitor",
+  troop_beast_thunder_rhino: "Thunder Meatball",
+  troop_beast_skyclaw_roc: "Ceiling Fan Bird",
+  troop_beast_elder_mammoth: "Grandpa Woolly",
+  troop_beast_apex_chimera: "Three Guys In A Coat",
+  troop_beast_primal_calamity: "Absolute Unit Event",
+  troop_machine_tin_drone: "Soup Can Drone",
+  troop_machine_servo_helper: "Helpful Paperclip",
+  troop_machine_assembly_walker: "Conveyor Belt Legs",
+  troop_machine_cog_guardian: "Cog Blocker Deluxe",
+  troop_machine_factory_knight: "Forklift Paladin",
+  troop_machine_iron_harvester: "Rusty Juice Box",
+  troop_machine_mech_paladin: "Chrome Hall Monitor",
+  troop_machine_titan_loader: "Big Clanky Frank",
+  troop_machine_clockwork_dragon: "Wind-Up Lizard",
+  troop_machine_singularity_engine: "Forbidden Blender",
+  troop_undead_bone_skitter: "Bone Roomba",
+  troop_undead_grave_nibbler: "Toe Nibbler",
+  troop_undead_crypt_archer: "Skeleton With WiFi",
+  troop_undead_ghoul_captain: "Captain Crusty",
+  troop_undead_tomb_knight: "Coffin Bouncer",
+  troop_undead_wraith_duelist: "Drama Ghost",
+  troop_undead_lich_acolyte: "Homework Lich",
+  troop_undead_grave_titan: "Big Dirt Guy",
+  troop_undead_dread_lich: "Professor Stinky",
+  troop_undead_the_last_coffin: "Final Nap Box",
+  troop_memeborn_tiny_goofball: "Lil Goobert",
+  troop_memeborn_bonk_intern: "Bonk Intern",
+  troop_memeborn_oops_knight: "Oops Knight",
+  troop_memeborn_vibe_wizard: "Vibe Check Wizard",
+  troop_memeborn_chair_champion: "Folding Chair Steve",
+  troop_memeborn_yell_captain: "Caps Lock Captain",
+  troop_memeborn_chaos_accountant: "Tax Fraud Wizard",
+  troop_memeborn_monday_monster: "Monday Morning",
+  troop_memeborn_bababooey_herald: "Bababooey Herald",
+  troop_memeborn_the_big_bababooey: "The Big Bababooey",
+  spell_sit: "Sit Down Button",
+  spell_mana_conversion: "Sell This Creature",
+  spell_emergency_funding: "Sketchy Loan",
+  spell_disenchant: "Delete The Aura",
+  spell_nope: "Nuh Uh",
+  spell_reflect: "Uno Reverse-ish",
+  spell_disrupt: "Lag Switch",
+  spell_quick_jab: "Tiny Slap",
+  spell_pack_howl: "Group Chat Howl",
+  spell_primal_roar: "Loud Blender Noise",
+  spell_overclock: "Overclock The Toaster",
+  spell_repair_loop: "Duct Tape Ritual",
+  spell_factory_reset: "Factory Reset Panic",
+  spell_grave_call: "Wake Up Skeleton",
+  spell_bone_storm: "Bone Confetti",
+  spell_final_rites: "Last Receipt",
+  spell_bonk: "Bonk",
+  spell_minor_inconvenience: "Minor Inconvenience",
+  spell_unhinged_plan: "Totally Legal Plan",
+  spell_arcane_ping: "Wizard Poke",
+  spell_time_skip: "Skip The Cutscene",
+  spell_supply_drop: "Mystery Lunchbox",
+  spell_scrap_blast: "Scrap Yard Sneezing",
+  spell_orbital_ping: "Satellite Tap",
+  spell_forbidden_coupon: "Forbidden Coupon",
+  enchant_mana_spring: "Leaky Mana Faucet",
+  enchant_crystal_mine: "Shiny Rock Business",
+  enchant_arcane_reservoir: "Wizard Water Cooler",
+  enchant_mystic_well: "Suspicious Wishing Well",
+  enchant_infinite_generator: "Forever Battery",
+  enchant_arcane_shield: "Bubble Wrap Palace",
+  enchant_fortress_wall: "Very Serious Wall",
+  enchant_magic_barrier: "Nope Screen",
+  enchant_counter_matrix: "Spreadsheet Trap",
+  enchant_guardian_statue: "Judgy Statue",
+  enchant_hunting_ground: "Snack Zone",
+  enchant_alpha_den: "Cool Kids Den",
+  enchant_assembly_line: "Robot Waiting Room",
+  enchant_steel_bunker: "Tin Can Basement",
+  enchant_graveyard: "The Nap Yard",
+  enchant_haunted_cathedral: "Spooky Food Court",
+  enchant_meme_factory: "Meme Factory",
+  enchant_bababooey_echo: "Bababooey Echo Chamber",
+  enchant_supply_depot: "Coupon Warehouse",
+  enchant_orbital_array: "Sky Laser Subscription"
+};
+
+function describeTarget(effect) {
+  const target = effect.target || effect.selector || "";
+  const labels = {
+    enemyCore: "enemy Core",
+    targetOrEnemyCore: "a target or the enemy Core if troops are cleared",
+    targetTroop: "a target troop",
+    targetEnchantment: "a target enchantment",
+    targetOrFriendlyCore: "a friendly troop or your Core",
+    opponentAll: "all enemy cooldowns",
+    opponentSpells: "enemy spell cooldowns",
+    ownTroops: "your troop cooldowns",
+    ownAll: "your cooldowns",
+    destroyedTroop: "the defeated troop",
+    self: "itself",
+    friendlyFaction: `friendly ${effect.faction || "matching"} troops`,
+    playedFaction: `played ${effect.faction || "matching"} troops`
+  };
+  return labels[target] || target || "the target";
+}
+
+function effectText(effect) {
+  const trigger = {
+    spell: "When cast",
+    startTurn: "At the start of your turn",
+    death: "When it dies",
+    onAttack: "When it attacks",
+    onPlay: "When played",
+    static: "While active",
+    onSpellCast: "Whenever you cast a spell",
+    onPlayTroop: "Whenever you play a matching troop"
+  }[effect.trigger] || "Effect";
+  const temporary = effect.temporary ? " temporary" : "";
+  const type = effect.type;
+  if (type === "manaGain") return `${trigger}: gain +${effect.amount}${temporary} mana.`;
+  if (type === "manaGainFromDestroyedCost") return `${trigger}: gain temporary mana equal to the destroyed troop's mana cost.`;
+  if (type === "manaGainForFaction") return `${trigger}: if it is ${effect.faction}, gain +${effect.amount}${temporary} mana.`;
+  if (type === "maxManaIncrease") return `${trigger}: increase your mana bank cap by ${effect.amount}.`;
+  if (type === "damage") return `${trigger}: deal ${effect.amount} damage to ${describeTarget(effect)}.`;
+  if (type === "trueDamage") return `${trigger}: deal ${effect.amount} true damage to ${describeTarget(effect)}.`;
+  if (type === "trueDamageSelfCore") return `${trigger}: deal ${effect.amount} true damage to your own Core.`;
+  if (type === "damageAllTroops") return `${trigger}: deal ${effect.amount} damage to every troop.`;
+  if (type === "damageAllEnemies") return `${trigger}: deal ${effect.amount} damage to all enemy troops.`;
+  if (type === "heal") return `${trigger}: heal ${describeTarget(effect)} for ${effect.amount} HP.`;
+  if (type === "healCore") return `${trigger}: heal your Core for ${effect.amount} HP.`;
+  if (type === "statBuff") {
+    const parts = [];
+    if (effect.attack) parts.push(`+${effect.attack} Attack`);
+    if (effect.defense) parts.push(`+${effect.defense} Defense`);
+    if (effect.hp) parts.push(`+${effect.hp} HP`);
+    return `${trigger}: give ${describeTarget(effect)} ${parts.join(", ")}.`;
+  }
+  if (type === "destroyTroop") return `${trigger}: destroy ${describeTarget(effect)}.`;
+  if (type === "destroyEnchantment") return `${trigger}: destroy ${describeTarget(effect)}.`;
+  if (type === "destroyEnchantmentOnHit") return `${trigger}: destroy the enchantment it hits.`;
+  if (type === "enchantmentDamageBonus") return `${trigger}: deal +${effect.amount} bonus damage to enchantments.`;
+  if (type === "enchantmentDamageReduction") return `${trigger}: reduce damage to your enchantments by ${effect.amount}.`;
+  if (type === "enchantmentDamageMultiplier") return `${trigger}: your enchantments take ${Math.round((1 - effect.multiplier) * 100)}% less damage.`;
+  if (type === "coreDamageReduction") return `${trigger}: reduce damage to your Core by ${effect.amount}.`;
+  if (type === "lifesteal") return `${trigger}: heal your Core for ${effect.amount} after dealing damage.`;
+  if (type === "cooldownIncrease") return `${trigger}: increase ${describeTarget(effect)} by ${effect.amount}.`;
+  if (type === "cooldownReduction") return `${trigger}: reduce ${describeTarget(effect)} by ${effect.amount}.`;
+  if (type === "spellCounter") return `${trigger}: counter the next enemy spell.`;
+  if (type === "spellReflection") return `${trigger}: reflect the next enemy spell back if possible.`;
+  if (type === "spellCounterFirstEachTurn") return `${trigger}: cancel the first enemy spell each turn.`;
+  if (type === "enemySpellCostIncrease") return `${trigger}: enemy spells cost +${effect.amount} mana.`;
+  if (type === "firstSpellDiscount") return `${trigger}: your first spell each turn costs ${effect.amount} less.`;
+  if (type === "coreAttackBonus") return `${trigger}: ${effect.faction} attackers deal +${effect.amount} Core damage.`;
+  if (type === "trampleCoreDamage") return `${trigger}: also deal ${effect.amount} damage to the enemy Core.`;
+  return `${trigger}: ${type.replace(/([A-Z])/g, " $1").toLowerCase()}.`;
+}
+
+function buildRulesText(card) {
+  const details = [];
+  const label = `${card.rarity} ${card.faction || "neutral"} ${card.type}`;
+  if (card.type === "core") {
+    details.push(`${label}. Core starts with ${card.hp} HP and loses when HP reaches 0.`);
+  } else if (card.type === "troop") {
+    details.push(`${label}. Costs ${card.manaCost} mana, enters cooldown ${card.cooldown} after defeat, and returns to your roster when cooldown ends.`);
+    details.push(`Stats: ${card.attack} Attack, ${card.defense} Defense, ${card.hp} HP. Damage uses Attack minus Defense, minimum 1. Defense refreshes at the start of the owner's turn; HP only returns through healing.`);
+    details.push((card.perks || []).some((perk) => String(perk).toLowerCase().includes("haste"))
+      ? "Haste: this troop can attack on the turn it is played."
+      : "Cannot attack the turn it is played. Troops can attack enemy troops or enchantments, and can attack the enemy Core only when that opponent has no active troops.");
+  } else if (card.type === "spell") {
+    details.push(`${label}. Costs ${card.manaCost} mana, resolves immediately, then enters cooldown ${card.cooldown}. Spells are reusable after cooldown expires.`);
+  } else if (card.type === "enchantment") {
+    details.push(`${label}. Costs ${card.manaCost} mana and has ${card.hp} HP. You can have up to 3 enchantments active, and this exact enchantment cannot be replayed while already active.`);
+    details.push(`Enemy troops can attack it directly. When destroyed, it enters cooldown ${card.cooldown} and later returns to your roster.`);
+  }
+  const effectDetails = (card.effects || []).map(effectText);
+  if (effectDetails.length) details.push(...effectDetails);
+  if (!effectDetails.length && card.perks?.length) details.push(`Flavor role: ${card.perks.join(" | ")}.`);
+  details.push(`Copy tag: ${card.copyTag || "standard"}.`);
+  return details.join(" ");
+}
+
 const cards = [...coreCards, ...troopCards, ...spellCards, ...enchantmentCards].map((card) => ({
   ...card,
+  name: memeCardNames[card.id] || card.name,
   effects: cardEffects[card.id] || []
-}));
+})).map((card) => {
+  const text = buildRulesText(card);
+  return {
+    ...card,
+    text,
+    rulesText: text
+  };
+});
 const cardsById = new Map(cards.map((card) => [card.id, card]));
 
 module.exports = { cards, cardsById };
