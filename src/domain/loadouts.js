@@ -6,6 +6,13 @@ const COPY_LIMITS = {
   unique: 1
 };
 
+const DECK_RULES = {
+  total: 12,
+  troops: 8,
+  spells: 2,
+  enchantments: 2
+};
+
 function summarizeCards(cardQuantities, cardsById) {
   const summary = {
     total: 0,
@@ -47,7 +54,7 @@ function validateLoadout({ cards, coreCardId, collection }, cardsById) {
     }
 
     if (card.type === "core") {
-      errors.push(`${card.name} is a core and cannot occupy one of the 20 loadout card slots.`);
+      errors.push(`${card.name} is a core and cannot occupy one of the ${DECK_RULES.total} loadout card slots.`);
       continue;
     }
 
@@ -72,7 +79,10 @@ function validateLoadout({ cards, coreCardId, collection }, cardsById) {
   }
 
   const summary = summarizeCards(normalizedCards, cardsById);
-  if (summary.total !== 20) errors.push("Loadout must contain exactly 20 cards.");
+  if (summary.total !== DECK_RULES.total) errors.push(`Loadout must contain exactly ${DECK_RULES.total} cards.`);
+  if (summary.troops !== DECK_RULES.troops) errors.push(`Loadout must contain exactly ${DECK_RULES.troops} troops.`);
+  if (summary.spells !== DECK_RULES.spells) errors.push(`Loadout must contain exactly ${DECK_RULES.spells} spells.`);
+  if (summary.enchantments !== DECK_RULES.enchantments) errors.push(`Loadout must contain exactly ${DECK_RULES.enchantments} enchantments.`);
 
   return {
     valid: errors.length === 0,
@@ -82,4 +92,4 @@ function validateLoadout({ cards, coreCardId, collection }, cardsById) {
   };
 }
 
-module.exports = { COPY_LIMITS, validateLoadout, summarizeCards };
+module.exports = { COPY_LIMITS, DECK_RULES, validateLoadout, summarizeCards };

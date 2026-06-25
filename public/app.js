@@ -28,6 +28,7 @@
     friendIdentifier: "",
     cards: [],
     collection: [],
+    loadouts: [],
     quests: [],
     packs: [],
     friends: [],
@@ -108,6 +109,19 @@
 
   function opponentPlayer() {
     return state.match?.players.find((player) => player.id !== state.match.activePlayerId);
+  }
+
+  function viewerPlayer() {
+    if (!state.match) return null;
+    if (state.battleMode === "online" && state.profile?.userId) {
+      return state.match.players.find((player) => player.id === state.profile.userId) || state.match.players[0];
+    }
+    return activePlayer();
+  }
+
+  function viewerOpponent() {
+    const viewer = viewerPlayer();
+    return state.match?.players.find((player) => player.id !== viewer?.id) || null;
   }
 
   function authHeaders() {
@@ -753,20 +767,33 @@
     }).catch((error) => setMessage(error.message));
   }
 
+  async function saveActiveLoadout() {
+    try {
+      const saved = await api("/loadouts", {
+        method: "POST",
+        body: { name: "Custom Deck", coreCardId: state.loadoutCoreCardId, cards: state.loadoutDraft }
+      });
+      await api(`/loadouts/${saved.id}/activate`, { method: "POST" });
+      await refreshAccountData();
+      state.loadoutValidation = await api("/loadouts/validate", {
+        method: "POST",
+        body: { name: saved.name, coreCardId: state.loadoutCoreCardId, cards: state.loadoutDraft }
+      });
+      state.message = "Deck saved and activated. Queues will use this deck.";
+      render();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
   function autoFillLoadout() {
     const owned = new Map(state.collection.map((item) => [item.id, item.ownedCount || 0]));
     const starterDraft = {
       troop_mana_goblin: 3,
       troop_mana_slime: 3,
       troop_mana_golem: 2,
-      troop_mana_dragon: 1,
-      troop_enchantment_eater: 3,
-      troop_arcane_hunter: 2,
-      troop_demolition_bot: 2,
-      spell_sit: 1,
-      spell_emergency_funding: 1,
-      spell_disenchant: 1,
-      enchant_mana_spring: 1
+      spell_emergency_funding: 2,
+      enchant_mana_spring: 2
     };
     state.loadoutCoreCardId = owned.get("core_starter") > 0 ? "core_starter" : state.collection.find((item) => item.type === "core" && item.ownedCount > 0)?.id || "core_starter";
     state.loadoutDraft = Object.fromEntries(
@@ -779,13 +806,15 @@
 
   function renderLoadout() {
     const page = el("div", "grid");
+    const validation = state.loadoutValidation;
     page.appendChild(titleBar("Loadout Builder", [
       iconButton("+", "Autofill", false, autoFillLoadout),
-      iconButton("V", "Validate", false, validateDraft)
+      iconButton("V", "Validate", false, validateDraft),
+      iconButton("S", "Save Deck", validation?.valid !== true, saveActiveLoadout)
     ]));
     page.appendChild(el("section", "section onboarding-panel", `
-      <h2>Starter Deck Ready</h2>
-      <p>Your account already has an active Starter Deck. Use Autofill to inspect the exact starter list, then Validate if you want to confirm a custom draft before testing with friends.</p>
+      <h2>Deck Builder</h2>
+      <p>Build exactly 8 troops, 2 spells, and 2 enchantments, then Save Deck to activate it for casual, ranked, and friend matches.</p>
     `));
     const layout = el("div", "builder");
     const cardPanel = el("section", "section");
@@ -825,12 +854,11 @@
       validateDraft();
     });
     selected.appendChild(coreSelect);
-    const validation = state.loadoutValidation;
     selected.appendChild(el("div", "pill-row", `
-      <span class="pill">Total ${validation?.summary?.total || 0}/20</span>
-      <span class="pill">Troops ${validation?.summary?.troops || 0}</span>
-      <span class="pill">Spells ${validation?.summary?.spells || 0}</span>
-      <span class="pill">Enchantments ${validation?.summary?.enchantments || 0}</span>
+      <span class="pill">Total ${validation?.summary?.total || 0}/12</span>
+      <span class="pill">Troops ${validation?.summary?.troops || 0}/8</span>
+      <span class="pill">Spells ${validation?.summary?.spells || 0}/2</span>
+      <span class="pill">Enchantments ${validation?.summary?.enchantments || 0}/2</span>
       <span class="pill">${validation?.valid ? "Valid" : "Needs work"}</span>
     `));
     const list = el("div", "selected-list");
@@ -842,6 +870,10 @@
     selected.appendChild(list);
     if (validation?.errors?.length) {
       selected.appendChild(el("div", "section", validation.errors.map(escapeHtml).join("<br>")));
+    }
+    selected.appendChild(iconButton("S", "Save & Activate Deck", validation?.valid !== true, saveActiveLoadout));
+    if (state.loadouts.length) {
+      selected.appendChild(el("div", "small", `Active saved deck: ${escapeHtml(state.loadouts.find((loadout) => loadout.isActive)?.name || "None")}`));
     }
     layout.append(cardPanel, selected);
     page.appendChild(layout);
@@ -1444,6 +1476,7 @@
         }
       }),
       iconButton("!", "Report Bug", !state.match, reportMatchBug),
+      iconButton("F", "Forfeit", !canForfeit(), forfeitMatch),
       iconButton("E", "End Turn", !canEndTurn(), endActiveTurn)
     ]));
     if (!state.match) {
@@ -1462,26 +1495,32 @@
       return;
     }
     const active = activePlayer();
-    const enemy = opponentPlayer();
+    const bottomPlayer = viewerPlayer();
+    const topPlayer = viewerOpponent();
     const activeManaCap = active.manaBankCap || active.baseMaxMana || 20;
     const summary = el("section", `section battle-summary ${state.match.status === "finished" ? "winner" : ""}`, `<div class="pill-row"><span class="pill">${state.battleMode === "online" ? `Online ${escapeHtml(state.onlineMatch?.mode || "friend")} match` : "Local battle"}</span><span class="pill">Connection ${escapeHtml(state.battleMode === "online" ? state.connectionStatus : "local")}</span>${state.opponentDisconnected ? `<span class="pill">Opponent disconnected</span>` : ""}<span class="pill">Turn ${state.match.turnNumber}</span><span class="pill">Active ${playerName(active.id)}</span><span class="pill">Bank ${active.currentMana}/${activeManaCap}</span><span class="pill">${state.match.status}</span>${state.match.winnerId ? `<span class="pill">Winner ${playerName(state.match.winnerId)}</span>` : ""}</div>${state.connectionStatus === "reconnecting" && state.battleMode === "online" ? `<div class="feedback-banner">Reconnecting to online match...</div>` : ""}${state.feedback ? `<div class="feedback-banner">${escapeHtml(state.feedback.text)}</div>` : ""}`);
     page.appendChild(summary);
     const arena = el("section", "arena");
-    arena.appendChild(playerZone(enemy, true));
+    arena.appendChild(playerZone(topPlayer, true));
     arena.appendChild(el("div", `targeting-guide ${state.selected ? "active" : ""}`, state.selected ? selectedText() : "Select a ready troop to attack, or play a card from the roster."));
-    arena.appendChild(playerZone(active, false));
+    arena.appendChild(playerZone(bottomPlayer, false));
     page.appendChild(arena);
     page.appendChild(renderBattleActionBar(active));
 
     const controls = el("div", "controls");
     const rosterPanel = el("section", "section roster");
-    rosterPanel.appendChild(el("h2", "", `${active.id} Available Roster`));
+    const rosterPlayer = state.battleMode === "online" ? bottomPlayer : active;
+    rosterPanel.appendChild(el("h2", "", `${playerName(rosterPlayer.id)} Available Roster`));
     const roster = el("div", "roster-list");
-    active.roster.forEach((entry) => roster.appendChild(miniCardForRoster(entry, active)));
-    if (active.coinAvailable) {
+    rosterPlayer.roster.forEach((entry) => roster.appendChild(miniCardForRoster(entry, rosterPlayer)));
+    if (rosterPlayer.coinAvailable) {
       const coin = el("div", "mini-card");
       coin.innerHTML = `<div class="mana">0</div><strong>Coin</strong><div class="label">spell</div><div class="small">+1 temporary mana</div>`;
-      coin.addEventListener("click", () => sendBattleCommand({ type: "castSpell", playerId: active.id, cardId: "spell_coin" }));
+      if (rosterPlayer.id !== state.match.activePlayerId || state.match.status !== "active") coin.classList.add("disabled");
+      coin.addEventListener("click", () => {
+        if (rosterPlayer.id !== state.match.activePlayerId || state.match.status !== "active") return;
+        sendBattleCommand({ type: "castSpell", playerId: rosterPlayer.id, cardId: "spell_coin" });
+      });
       roster.prepend(coin);
     }
     rosterPanel.appendChild(roster);
@@ -1501,9 +1540,19 @@
     return state.match.activePlayerId === state.profile?.userId;
   }
 
+  function canForfeit() {
+    return state.battleMode === "online" && state.onlineMatch?.id && state.match?.status === "active";
+  }
+
   function endActiveTurn() {
     if (!canEndTurn()) return;
     sendBattleCommand({ type: "endTurn", playerId: state.match.activePlayerId });
+  }
+
+  function forfeitMatch() {
+    if (!canForfeit()) return;
+    if (!confirm("Forfeit this match? This gives your opponent the win.")) return;
+    sendBattleCommand({ type: "forfeit", playerId: state.profile.userId });
   }
 
   function renderBattleActionBar(active) {
@@ -1512,6 +1561,7 @@
       ? "Waiting for opponent."
       : "Press E to end turn.";
     bar.appendChild(el("div", "battle-action-copy", `<strong>${escapeHtml(playerName(active.id))}'s turn</strong><span class="small">${escapeHtml(hint)}</span>`));
+    if (canForfeit()) bar.appendChild(iconButton("F", "Forfeit", false, forfeitMatch));
     bar.appendChild(iconButton("E", "End Turn", !canEndTurn(), endActiveTurn));
     return bar;
   }
@@ -1596,12 +1646,13 @@
   });
 
   async function refreshAccountData() {
-    const [profile, cards, collection, quests, packs] = await Promise.all([
+    const [profile, cards, collection, quests, packs, loadouts] = await Promise.all([
       api("/me"),
       api("/cards"),
       api("/collection"),
       api("/quests"),
-      api("/shop/packs")
+      api("/shop/packs"),
+      api("/loadouts")
     ]);
     state.profile = profile;
     state.settings.font = normalizeFont(profile.settings?.font || state.settings.font);
@@ -1610,6 +1661,7 @@
     state.collection = collection;
     state.quests = quests;
     state.packs = packs;
+    state.loadouts = loadouts;
     await refreshOnlineData();
   }
 

@@ -49,8 +49,8 @@ Authorization: Bearer <token>
 
 Loadout rules:
 
-- exactly 20 non-core cards
-- any mix of troops, spells, and enchantments is allowed
+- exactly 12 non-core cards: 8 troops, 2 spells, and 2 enchantments
+- the 8/2/2 type composition is required for saved and queued decks
 - Standard cards: up to 3 copies
 - Limited cards: up to 2 copies
 - Unique cards: 1 copy

@@ -6,10 +6,7 @@ const BEGINNER_LOADOUT = {
   cards: {
     troop_beast_pouncing_cub: 3,
     troop_beast_fang_pup: 3,
-    troop_tech_socket_runner: 3,
-    troop_memeborn_tiny_goofball: 3,
-    troop_neutral_frontline_recruit: 2,
-    troop_neutral_banner_squire: 2,
+    troop_tech_socket_runner: 2,
     spell_quick_jab: 2,
     enchant_hunting_ground: 2
   }
@@ -23,12 +20,7 @@ const STARTER_LOADOUTS = {
       troop_beast_pouncing_cub: 3,
       troop_beast_fang_pup: 3,
       troop_tech_socket_runner: 2,
-      troop_memeborn_tiny_goofball: 2,
-      troop_beast_river_raptor: 2,
-      troop_beast_horned_charger: 2,
-      troop_neutral_banner_squire: 1,
       spell_quick_jab: 2,
-      spell_bonk: 1,
       enchant_hunting_ground: 2
     }
   },
@@ -38,11 +30,7 @@ const STARTER_LOADOUTS = {
     cards: {
       troop_mana_goblin: 3,
       troop_mana_slime: 3,
-      troop_mana_sprout_channeler: 3,
-      troop_mana_lotus_adept: 2,
       troop_mana_golem: 2,
-      troop_mana_crystal_herder: 2,
-      troop_mana_leyline_giant: 1,
       spell_emergency_funding: 2,
       enchant_mana_spring: 2
     }
@@ -54,12 +42,7 @@ const STARTER_LOADOUTS = {
       troop_arcane_rune_apprentice: 3,
       troop_arcane_glyph_scout: 3,
       troop_arcane_spellblade_adept: 2,
-      troop_arcane_mirror_savant: 2,
-      troop_arcane_nullmage_guard: 2,
-      troop_neutral_shield_captain: 2,
-      troop_arcane_astral_binder: 1,
       spell_disenchant: 2,
-      spell_disrupt: 1,
       enchant_arcane_shield: 2
     }
   },
@@ -69,14 +52,9 @@ const STARTER_LOADOUTS = {
     cards: {
       troop_beast_pouncing_cub: 3,
       troop_beast_fang_pup: 3,
-      troop_beast_river_raptor: 3,
-      troop_beast_horned_charger: 2,
-      troop_beast_pack_alpha: 2,
-      troop_beast_thunder_rhino: 2,
-      troop_beast_skyclaw_roc: 1,
+      troop_beast_river_raptor: 2,
       spell_pack_howl: 2,
-      enchant_hunting_ground: 1,
-      enchant_alpha_den: 1
+      enchant_hunting_ground: 2
     }
   },
   machine: {
@@ -85,14 +63,9 @@ const STARTER_LOADOUTS = {
     cards: {
       troop_machine_tin_drone: 3,
       troop_machine_servo_helper: 3,
-      troop_machine_assembly_walker: 3,
-      troop_machine_cog_guardian: 2,
-      troop_machine_factory_knight: 2,
-      troop_machine_iron_harvester: 2,
-      troop_tech_wrench_rookie: 1,
+      troop_machine_assembly_walker: 2,
       spell_overclock: 2,
-      enchant_assembly_line: 1,
-      enchant_steel_bunker: 1
+      enchant_assembly_line: 2
     }
   },
   undead: {
@@ -101,14 +74,9 @@ const STARTER_LOADOUTS = {
     cards: {
       troop_undead_bone_skitter: 3,
       troop_undead_grave_nibbler: 3,
-      troop_undead_crypt_archer: 3,
-      troop_undead_ghoul_captain: 2,
-      troop_undead_tomb_knight: 2,
-      troop_undead_wraith_duelist: 2,
-      troop_undead_lich_acolyte: 1,
+      troop_undead_crypt_archer: 2,
       spell_grave_call: 2,
-      enchant_graveyard: 1,
-      enchant_haunted_cathedral: 1
+      enchant_graveyard: 2
     }
   },
   memeborn: {
@@ -117,14 +85,9 @@ const STARTER_LOADOUTS = {
     cards: {
       troop_memeborn_tiny_goofball: 3,
       troop_memeborn_bonk_intern: 3,
-      troop_memeborn_oops_knight: 3,
-      troop_memeborn_vibe_wizard: 2,
-      troop_memeborn_chair_champion: 2,
-      troop_memeborn_yell_captain: 2,
-      troop_memeborn_chaos_accountant: 1,
+      troop_memeborn_oops_knight: 2,
       spell_bonk: 2,
-      spell_minor_inconvenience: 1,
-      enchant_meme_factory: 1
+      enchant_meme_factory: 2
     }
   }
 };

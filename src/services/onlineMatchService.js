@@ -171,9 +171,9 @@ function createOnlineMatchService(store, options = {}) {
 
   function findActiveLoadout(playerId, context = "accepting a challenge") {
     const loadouts = Array.from(store.loadouts.values()).filter((loadout) => loadout.playerId === playerId);
-    const loadout = loadouts.find((item) => item.isActive) || loadouts[0];
+    const loadout = loadouts.find((item) => item.isActive);
     if (!loadout) {
-      const error = new Error(`Matchmaking blocked: build or use the Starter Deck before ${context}.`);
+      const error = new Error(`Matchmaking blocked: save and activate a valid deck before ${context}.`);
       error.status = 400;
       throw error;
     }
@@ -529,7 +529,8 @@ function createOnlineMatchService(store, options = {}) {
       playEnchantment: ["type", "cardId"],
       castSpell: ["type", "cardId", "target"],
       attack: ["type", "attackerInstanceId", "target"],
-      endTurn: ["type"]
+      endTurn: ["type"],
+      forfeit: ["type"]
     };
     const allowedKeys = allowed[intent.type];
     if (!allowedKeys) {
@@ -619,6 +620,21 @@ function createOnlineMatchService(store, options = {}) {
       throw error;
     }
     const commandPayload = { ...safeIntent, playerId: userId };
+    if (safeIntent.type === "forfeit") {
+      const winnerId = match.playerIds.find((id) => id !== userId);
+      match.state.eventLog.push({
+        sequence: match.state.eventLog.length + 1,
+        turnNumber: match.state.turnNumber,
+        type: "match_forfeited",
+        playerId: userId,
+        payload: { winnerId, loserId: userId }
+      });
+      persistNewEvents(match, previousLength);
+      finalizeMatch(match, "finished", winnerId);
+      const serialized = serializeOnlineMatch(store, match);
+      logMatchCommand(match, userId, safeIntent, { status: 200 }, "accepted");
+      return { result: { type: "forfeit", winnerId }, match: serialized };
+    }
     let result;
     try {
       result = applyCommand(match.state, commandPayload, { cardCatalog });

@@ -88,14 +88,9 @@ function seedCollection(app, playerId) {
     troop_mana_goblin: 3,
     troop_mana_slime: 3,
     troop_mana_golem: 2,
-    troop_mana_dragon: 1,
-    troop_enchantment_eater: 3,
-    troop_arcane_hunter: 2,
-    troop_demolition_bot: 2,
     spell_sit: 1,
     spell_emergency_funding: 1,
-    spell_disenchant: 1,
-    enchant_mana_spring: 1
+    enchant_mana_spring: 2
   };
   for (const [cardId, quantity] of Object.entries(quantities)) {
     for (let i = 0; i < quantity; i += 1) app.services.collection.grantCard(cardId, playerId, "online_test");
@@ -528,8 +523,32 @@ test("players cannot queue without a valid active loadout", async (t) => {
       method: "POST",
       headers: { authorization: `Bearer ${player.token}` }
     }),
-    /Starter Deck/
+    /valid deck|active loadout/
   );
+});
+
+test("players cannot queue with an invalid active loadout", () => {
+  const { app, playerA } = makeOnlineFixture();
+  const active = Array.from(app.store.loadouts.values()).find((loadout) => loadout.playerId === playerA.user.id && loadout.isActive);
+  active.cards = { troop_mana_goblin: 1 };
+
+  assert.throws(
+    () => app.services.onlineMatches.joinQueue(playerA.user.id, "ranked"),
+    /active loadout needs fixes|exactly 12|exactly 8 troops/i
+  );
+});
+
+test("online player can forfeit and grant opponent the win", () => {
+  const { app, playerA, playerB } = makeOnlineFixture();
+  app.services.onlineMatches.joinQueue(playerA.user.id, "ranked");
+  const { match } = app.services.onlineMatches.joinQueue(playerB.user.id, "ranked");
+
+  const response = app.services.onlineMatches.command(playerA.user.id, match.id, { type: "forfeit" });
+
+  assert.equal(response.match.status, "finished");
+  assert.equal(response.match.winnerId, playerB.user.id);
+  assert.ok(response.match.state.eventLog.some((event) => event.type === "match_forfeited" && event.playerId === playerA.user.id));
+  assert.ok(app.store.matchHistory.some((entry) => entry.matchId === match.id && entry.playerId === playerB.user.id && entry.result === "win"));
 });
 
 test("casual matches grant casual rewards only once", () => {

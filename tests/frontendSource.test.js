@@ -19,6 +19,19 @@ test("battle end turn control stays reachable and supports E keybind", () => {
   assert.match(cssSource, /position:\s*sticky/);
 });
 
+test("online battle keeps viewer side stable and exposes forfeit", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /function viewerPlayer\(\)/);
+  assert.match(appSource, /state\.profile\?\.userId/);
+  assert.match(appSource, /const bottomPlayer = viewerPlayer\(\)/);
+  assert.match(appSource, /arena\.appendChild\(playerZone\(bottomPlayer, false\)\)/);
+  assert.match(appSource, /function canForfeit\(\)/);
+  assert.match(appSource, /function forfeitMatch\(\)/);
+  assert.match(appSource, /type: "forfeit"/);
+  assert.match(appSource, /Forfeit this match\?/);
+});
+
 test("frontend asks for username and renders full pack shop", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 
@@ -63,6 +76,12 @@ test("loadout builder only shows and autofills owned cards", () => {
   assert.match(appSource, /ownedLoadoutCards\.forEach/);
   assert.match(appSource, /No owned non-core cards yet/);
   assert.match(appSource, /\.filter\(\(\[cardId\]\) => \(owned\.get\(cardId\) \|\| 0\) > 0\)/);
+  assert.match(appSource, /Build exactly 8 troops, 2 spells, and 2 enchantments/);
+  assert.match(appSource, /function saveActiveLoadout/);
+  assert.match(appSource, /\/loadouts",\s*\{\s*method: "POST"/s);
+  assert.match(appSource, /\/loadouts\/\$\{saved\.id\}\/activate/);
+  assert.match(appSource, /Save & Activate Deck/);
+  assert.match(appSource, /Total \$\{validation\?\.summary\?\.total \|\| 0\}\/12/);
 });
 
 test("loadout card action buttons do not open card details", () => {

@@ -10,14 +10,9 @@ const DEMO_LOADOUT = {
     troop_mana_goblin: 3,
     troop_mana_slime: 3,
     troop_mana_golem: 2,
-    troop_mana_dragon: 1,
-    troop_enchantment_eater: 3,
-    troop_arcane_hunter: 2,
-    troop_demolition_bot: 2,
     spell_sit: 1,
     spell_emergency_funding: 1,
-    spell_disenchant: 1,
-    enchant_mana_spring: 1
+    enchant_mana_spring: 2
   }
 };
 

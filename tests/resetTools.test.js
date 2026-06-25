@@ -74,7 +74,7 @@ test("resetPlayerAccount restores starter progression and clears that player's d
   assert.equal(profile.displayName, "Reset_Alpha");
   assert.equal(profile.coins, 1000);
   assert.deepEqual(profile.freePacks, { starter_pack: 3 });
-  assert.equal(owned.size, 9);
+  assert.equal(owned.size, 6);
   assert.equal(loadouts.length, 1);
   assert.equal(loadouts[0].name, "Beginner Starter");
   assert.equal(app.store.friendships.size, 0);
@@ -168,7 +168,7 @@ test("players can reset only their own stats from settings route", async (t) => 
   assert.equal(reset.profile.userId, playerA.user.id);
   assert.equal(reset.profile.coins, 1000);
   assert.deepEqual(reset.profile.freePacks, { starter_pack: 3 });
-  assert.equal(reset.collection.filter((item) => item.ownedCount > 0).length, 9);
+  assert.equal(reset.collection.filter((item) => item.ownedCount > 0).length, 6);
   assert.equal(app.store.users.has(playerB.user.id), true);
   assert.equal(app.store.profiles.get(playerB.user.id).displayName, "Settings_Bravo");
 });

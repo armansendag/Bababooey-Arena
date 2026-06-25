@@ -21,11 +21,7 @@ function grantLegalLoadoutCollection(app, playerId) {
     troop_mana_goblin: 3,
     troop_mana_slime: 3,
     troop_mana_golem: 2,
-    troop_mana_dragon: 1,
-    troop_enchantment_eater: 3,
-    troop_arcane_hunter: 2,
-    troop_demolition_bot: 2,
-    spell_disenchant: 2,
+    spell_emergency_funding: 2,
     enchant_mana_spring: 2
   };
 
@@ -147,8 +143,8 @@ test("new accounts receive limited starter rewards, not the full catalog", () =>
 
   assert.equal(app.store.profiles.get(player.user.id).coins, 1000);
   assert.deepEqual(app.store.profiles.get(player.user.id).freePacks, { starter_pack: 3 });
-  assert.equal(owned.size, 9);
-  assert.equal(totalCopies, 21);
+  assert.equal(owned.size, 6);
+  assert.equal(totalCopies, 13);
   assert.equal(owned.size < app.store.cards.size, true);
 });
 
@@ -191,7 +187,7 @@ test("friend requests are created and accepted by friend code", () => {
   assert.equal(friends[0].addressee.displayName, "Bravo");
 });
 
-test("loadout builder enforces ownership, total count, and copy limits", () => {
+test("loadout builder enforces ownership, 8/2/2 composition, and copy limits", () => {
   const app = createApp();
   const player = register(app, "loadout@example.com", "Builder");
   const cards = grantLegalLoadoutCollection(app, player.user.id);
@@ -203,8 +199,8 @@ test("loadout builder enforces ownership, total count, and copy limits", () => {
   });
 
   assert.equal(valid.valid, true);
-  assert.equal(valid.summary.total, 20);
-  assert.equal(valid.summary.troops, 16);
+  assert.equal(valid.summary.total, 12);
+  assert.equal(valid.summary.troops, 8);
   assert.equal(valid.summary.spells, 2);
   assert.equal(valid.summary.enchantments, 2);
 
@@ -216,24 +212,27 @@ test("loadout builder enforces ownership, total count, and copy limits", () => {
   assert.equal(loadout.name, "Mana Curve");
 });
 
-test("loadouts may use any card type mix when count, ownership, and copy limits are valid", () => {
+test("loadouts reject valid counts with the wrong card type mix", () => {
   const app = createApp();
-  const player = register(app, "anymix@example.com", "Any Mix");
-  const spellCards = Array.from(app.store.cards.values()).filter((card) => card.type === "spell").slice(0, 20);
+  const player = register(app, "wrongmix@example.com", "Wrong Mix");
+  const spellCards = Array.from(app.store.cards.values()).filter((card) => card.type === "spell" && card.copyTag === "standard").slice(0, 4);
   for (const card of spellCards) {
-    app.services.collection.grantCard(card.id, player.user.id, "test_seed");
+    for (let i = 0; i < 3; i += 1) app.services.collection.grantCard(card.id, player.user.id, "test_seed");
   }
 
   const result = app.services.loadouts.validate(player.user.id, {
     coreCardId: "core_starter",
-    cards: Object.fromEntries(spellCards.map((card) => [card.id, 1]))
+    cards: Object.fromEntries(spellCards.map((card) => [card.id, 3]))
   });
 
-  assert.equal(result.valid, true, result.errors.join(", "));
-  assert.equal(result.summary.total, 20);
-  assert.equal(result.summary.spells, 20);
+  assert.equal(result.valid, false);
+  assert.equal(result.summary.total, 12);
+  assert.equal(result.summary.spells, 12);
   assert.equal(result.summary.troops, 0);
   assert.equal(result.summary.enchantments, 0);
+  assert.ok(result.errors.some((error) => error.includes("exactly 8 troops")));
+  assert.ok(result.errors.some((error) => error.includes("exactly 2 spells")));
+  assert.ok(result.errors.some((error) => error.includes("exactly 2 enchantments")));
 });
 
 test("invalid loadouts report copy limit and total count failures", () => {
@@ -251,9 +250,9 @@ test("invalid loadouts report copy limit and total count failures", () => {
 
   assert.equal(result.valid, false);
   assert.ok(result.errors.some((error) => error.includes("unique copy limit")));
-  assert.ok(result.errors.some((error) => error.includes("exactly 20")));
-  assert.equal(result.errors.some((error) => error.includes("14-16 troops")), false);
-  assert.equal(result.errors.some((error) => error.includes("up to 3 spells")), false);
+  assert.ok(result.errors.some((error) => error.includes("exactly 12")));
+  assert.ok(result.errors.some((error) => error.includes("exactly 8 troops")));
+  assert.ok(result.errors.some((error) => error.includes("exactly 2 enchantments")));
 });
 
 test("pack opening charges coins, grants cards, converts copies beyond ten, and advances quests", () => {
