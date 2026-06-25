@@ -594,11 +594,11 @@
       <div class="rarity-frame"></div>
       <div class="card-head">
         <div class="mana">${cardData.manaCost}</div>
-        <div>
+        <div class="rarity-badge">${escapeHtml(cardData.rarity || "common")}</div>
+        <div class="card-title-block">
           <div class="card-name">${escapeHtml(cardData.name)}</div>
           <div class="label"><span class="type-icon">${typeIcon(cardData.type)}</span> ${escapeHtml(cardData.type)}</div>
         </div>
-        <div class="rarity-badge">${escapeHtml(cardData.rarity || "common")}</div>
       </div>
       <div class="faction-label">${escapeHtml(cardData.faction || "neutral")}</div>
       <div class="card-description">${escapeHtml(description)}</div>

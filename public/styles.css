@@ -257,13 +257,19 @@ button:disabled {
   grid-template-columns: 34px minmax(0, 1fr) auto;
   grid-template-areas:
     "mana spacer rarity"
-    "name name name";
-  gap: 7px 8px;
+    "title title title";
+  gap: 8px;
   align-items: start;
 }
 
 .card-head .mana {
   grid-area: mana;
+}
+
+.card-title-block {
+  grid-area: title;
+  min-width: 0;
+  padding-top: 2px;
 }
 
 .mana {
@@ -278,12 +284,11 @@ button:disabled {
 }
 
 .card-name {
-  grid-area: name;
   font-weight: 800;
   line-height: 1.15;
   overflow-wrap: break-word;
   hyphens: auto;
-  min-height: 2.3em;
+  min-height: 1.15em;
 }
 
 .label {
