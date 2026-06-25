@@ -118,6 +118,14 @@ test("meme beta UI uses Bababooey branding, logo, and expandable card rules", ()
   assert.match(cssSource, /\.show-more/);
 });
 
+test("browser tab uses Bababooey logo favicon", () => {
+  const indexSource = fs.readFileSync(path.join(root, "public", "index.html"), "utf8");
+
+  assert.match(indexSource, /<title>Bababooey Arena<\/title>/);
+  assert.match(indexSource, /rel="icon" href="\/assets\/fairs-logo\.jpg" type="image\/jpeg"/);
+  assert.match(indexSource, /rel="apple-touch-icon" href="\/assets\/fairs-logo\.jpg"/);
+});
+
 test("frontend does not expose an admin panel", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 
