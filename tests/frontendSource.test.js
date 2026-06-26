@@ -84,6 +84,22 @@ test("loadout builder only shows and autofills owned cards", () => {
   assert.match(appSource, /Total \$\{validation\?\.summary\?\.total \|\| 0\}\/12/);
 });
 
+test("loadout builder blocks invalid card additions with a warning", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /loadoutWarning/);
+  assert.match(appSource, /function draftSummary/);
+  assert.match(appSource, /function loadoutLimitMessage/);
+  assert.match(appSource, /Deck already has 8 troops/);
+  assert.match(appSource, /Deck already has 2 spells/);
+  assert.match(appSource, /Deck already has 2 enchantments/);
+  assert.match(appSource, /Deck is full/);
+  assert.match(appSource, /state\.loadoutWarning = warning;\s*render\(\);\s*return;/);
+  assert.match(appSource, /el\("div", "loadout-warning"/);
+  assert.match(cssSource, /\.loadout-warning/);
+});
+
 test("loadout card action buttons do not open card details", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 

@@ -45,6 +45,7 @@
     loadoutDraft: {},
     loadoutCoreCardId: "core_starter",
     loadoutValidation: null,
+    loadoutWarning: "",
     packReveal: null,
     cardFilters: {
       query: "",
@@ -751,9 +752,43 @@
     return state.loadoutDraft[cardId] || 0;
   }
 
+  function draftSummary(extraCardId = null) {
+    const summary = { total: 0, troop: 0, spell: 0, enchantment: 0 };
+    const entries = { ...state.loadoutDraft };
+    if (extraCardId) entries[extraCardId] = (entries[extraCardId] || 0) + 1;
+    Object.entries(entries).forEach(([cardId, quantity]) => {
+      const item = card(cardId);
+      if (!item || item.type === "core") return;
+      summary.total += quantity;
+      if (summary[item.type] !== undefined) summary[item.type] += quantity;
+    });
+    return summary;
+  }
+
+  function loadoutLimitMessage(item) {
+    const currentCount = draftCount(item.id);
+    if (currentCount >= (item.ownedCount || 0)) return `You only own ${item.ownedCount || 0} copies of ${item.name}.`;
+    const next = draftSummary(item.id);
+    if (next.total > 12) return "Deck is full. Remove a card before adding another one.";
+    if (item.type === "troop" && next.troop > 8) return "Deck already has 8 troops. Remove a troop before adding another one.";
+    if (item.type === "spell" && next.spell > 2) return "Deck already has 2 spells. Remove a spell before adding another one.";
+    if (item.type === "enchantment" && next.enchantment > 2) return "Deck already has 2 enchantments. Remove an enchantment before adding another one.";
+    return "";
+  }
+
   function updateDraft(cardId, delta) {
+    if (delta > 0) {
+      const item = card(cardId);
+      const warning = item ? loadoutLimitMessage(item) : "That card cannot be added to this deck.";
+      if (warning) {
+        state.loadoutWarning = warning;
+        render();
+        return;
+      }
+    }
     state.loadoutDraft[cardId] = Math.max(0, draftCount(cardId) + delta);
     if (state.loadoutDraft[cardId] === 0) delete state.loadoutDraft[cardId];
+    state.loadoutWarning = "";
     validateDraft();
   }
 
@@ -801,6 +836,7 @@
         .filter(([cardId]) => (owned.get(cardId) || 0) > 0)
         .map(([cardId, quantity]) => [cardId, Math.min(quantity, owned.get(cardId) || 0)])
     );
+    state.loadoutWarning = "";
     validateDraft();
   }
 
@@ -835,7 +871,7 @@
             updateDraft(item.id, -1);
           }),
           el("span", "pill", `${draftCount(item.id)} / ${item.ownedCount}`),
-          iconButton("+", "", draftCount(item.id) >= item.ownedCount, (event) => {
+          iconButton("+", "", false, (event) => {
             event.stopPropagation();
             updateDraft(item.id, 1);
           })
@@ -861,6 +897,7 @@
       <span class="pill">Enchantments ${validation?.summary?.enchantments || 0}/2</span>
       <span class="pill">${validation?.valid ? "Valid" : "Needs work"}</span>
     `));
+    if (state.loadoutWarning) selected.appendChild(el("div", "loadout-warning", escapeHtml(state.loadoutWarning)));
     const list = el("div", "selected-list");
     Object.entries(state.loadoutDraft).forEach(([cardId, quantity]) => {
       const item = card(cardId);

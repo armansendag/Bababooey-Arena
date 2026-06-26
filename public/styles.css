@@ -559,6 +559,15 @@ button:disabled {
   margin-bottom: 10px;
 }
 
+.loadout-warning {
+  border: 1px solid rgba(224, 184, 90, .7);
+  border-radius: 6px;
+  background: rgba(224, 184, 90, .12);
+  color: #ffe7a6;
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
 .battle-action-bar {
   position: sticky;
   bottom: 12px;
