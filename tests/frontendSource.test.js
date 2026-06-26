@@ -60,11 +60,19 @@ test("pack openings render exciting on-screen rarity reveals", () => {
   const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
 
   assert.match(appSource, /pack-reveal-stage/);
-  assert.match(appSource, /Best pull:/);
+  assert.match(appSource, /Best pull charging:/);
+  assert.match(appSource, /pack-drumroll/);
+  assert.match(appSource, /pack-spotlight/);
   assert.match(appSource, /pack-result-card/);
+  assert.match(appSource, /650 \+ index \* 420/);
   assert.match(appSource, /slam-reveal/);
   assert.match(appSource, /rarity-badge/);
+  assert.match(cssSource, /@keyframes suspenseSweep/);
+  assert.match(cssSource, /@keyframes suspenseDot/);
+  assert.match(cssSource, /@keyframes spotlightPop/);
   assert.match(cssSource, /@keyframes slamReveal/);
+  assert.match(cssSource, /\.pack-drumroll/);
+  assert.match(cssSource, /\.pack-spotlight/);
   assert.match(cssSource, /\.pack-result-card\.slam-reveal/);
   assert.match(cssSource, /\.rarity-badge/);
 });

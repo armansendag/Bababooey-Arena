@@ -870,6 +870,7 @@ button:disabled {
   border-color: rgba(224, 184, 90, .5);
   background: #171b23;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05), 0 18px 45px rgba(0, 0, 0, .24);
+  padding-top: 18px;
 }
 
 .pack-reveal-stage::before {
@@ -895,6 +896,94 @@ button:disabled {
 
 .pack-reveal-header h2 {
   font-size: 24px;
+  margin-top: 3px;
+}
+
+.pack-reveal-kicker {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.pack-drumroll {
+  position: relative;
+  z-index: 1;
+  min-height: 58px;
+  border: 1px solid rgba(224, 184, 90, .38);
+  border-radius: var(--radius);
+  background: rgba(8, 10, 14, .42);
+  display: grid;
+  grid-template-columns: 28px 28px 28px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.pack-drumroll::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(224, 184, 90, .16), transparent);
+  animation: suspenseSweep calc(2.4s * var(--anim-speed)) ease both;
+}
+
+.pack-drumroll span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: rgba(224, 184, 90, .12);
+  animation: suspenseDot calc(.72s * var(--anim-speed)) ease-in-out infinite alternate;
+}
+
+.pack-drumroll span:nth-child(2) {
+  animation-delay: calc(.18s * var(--anim-speed));
+}
+
+.pack-drumroll span:nth-child(3) {
+  animation-delay: calc(.36s * var(--anim-speed));
+}
+
+.pack-drumroll strong {
+  position: relative;
+  z-index: 1;
+}
+
+.pack-spotlight {
+  position: relative;
+  z-index: 1;
+  border: 1px solid color-mix(in srgb, var(--rarity, var(--gold)), white 24%);
+  border-radius: var(--radius);
+  background: rgba(8, 10, 14, .72);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--rarity, var(--gold)), transparent 62%);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  margin: -2px 0 16px;
+  animation: spotlightPop calc(2.2s * var(--anim-speed)) ease both;
+}
+
+.pack-spotlight.common { --rarity: #9aa4b5; }
+.pack-spotlight.uncommon { --rarity: #56b881; }
+.pack-spotlight.rare { --rarity: #5a98e8; }
+.pack-spotlight.epic { --rarity: #a36bdb; }
+.pack-spotlight.legendary { --rarity: #d79c43; }
+.pack-spotlight.mythic { --rarity: #df5d5d; }
+.pack-spotlight.bababooey { --rarity: #f3df70; }
+
+.pack-spotlight span,
+.pack-spotlight em {
+  color: var(--gold);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .pack-results-grid {
@@ -905,16 +994,19 @@ button:disabled {
 .pack-result-card {
   min-height: 250px;
   transform-origin: center 20%;
-  animation: cardDrop calc(.54s * var(--anim-speed)) cubic-bezier(.18, .9, .22, 1.2) both;
+  opacity: 0;
+  animation: cardDrop calc(1.02s * var(--anim-speed)) cubic-bezier(.18, .9, .22, 1.2) both;
 }
 
 .pack-result-card.big-reveal {
   animation-name: rareDrop;
+  animation-duration: calc(1.28s * var(--anim-speed));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--rarity), white 20%), 0 16px 34px rgba(0, 0, 0, .28), 0 0 30px color-mix(in srgb, var(--rarity), transparent 50%);
 }
 
 .pack-result-card.slam-reveal {
   animation-name: slamReveal;
+  animation-duration: calc(1.64s * var(--anim-speed));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--rarity), white 30%), 0 24px 48px rgba(0, 0, 0, .36), 0 0 44px color-mix(in srgb, var(--rarity), transparent 38%);
 }
 
@@ -1332,24 +1424,45 @@ button:disabled {
   to { transform: translateX(80%); opacity: .2; }
 }
 
+@keyframes suspenseSweep {
+  from { transform: translateX(-100%); opacity: 0; }
+  35% { opacity: 1; }
+  to { transform: translateX(100%); opacity: .15; }
+}
+
+@keyframes suspenseDot {
+  from { transform: scale(.72); opacity: .45; box-shadow: 0 0 0 rgba(224, 184, 90, 0); }
+  to { transform: scale(1.08); opacity: 1; box-shadow: 0 0 18px rgba(224, 184, 90, .5); }
+}
+
+@keyframes spotlightPop {
+  0% { transform: translateY(10px) scale(.96); opacity: 0; }
+  45% { transform: translateY(10px) scale(.96); opacity: 0; }
+  70% { transform: translateY(-3px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 @keyframes cardDrop {
-  from { transform: translateY(-40px) scale(.9) rotate(-2deg); opacity: 0; }
-  70% { transform: translateY(5px) scale(1.02) rotate(1deg); opacity: 1; }
-  to { transform: translateY(0) scale(1) rotate(0); opacity: 1; }
+  0% { transform: translateY(-70px) scale(.86) rotate(-2deg); opacity: 0; filter: brightness(1.25); }
+  45% { transform: translateY(-70px) scale(.86) rotate(-2deg); opacity: 0; }
+  72% { transform: translateY(8px) scale(1.03) rotate(1deg); opacity: 1; filter: brightness(1.35); }
+  100% { transform: translateY(0) scale(1) rotate(0); opacity: 1; filter: brightness(1); }
 }
 
 @keyframes rareDrop {
-  from { transform: translateY(-72px) scale(.82) rotate(3deg); opacity: 0; filter: brightness(1.4); }
-  55% { transform: translateY(9px) scale(1.08) rotate(-1deg); opacity: 1; filter: brightness(1.8); }
-  72% { transform: translateY(-4px) scale(1.02); }
-  to { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); }
+  0% { transform: translateY(-110px) scale(.76) rotate(3deg); opacity: 0; filter: brightness(1.8); }
+  38% { transform: translateY(-110px) scale(.76) rotate(3deg); opacity: 0; }
+  61% { transform: translateY(12px) scale(1.1) rotate(-1deg); opacity: 1; filter: brightness(2); }
+  76% { transform: translateY(-5px) scale(1.04); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); }
 }
 
 @keyframes slamReveal {
-  0% { transform: translateY(-150px) scale(.72) rotate(7deg); opacity: 0; filter: brightness(2); }
-  58% { transform: translateY(15px) scale(1.13) rotate(-2deg); opacity: 1; filter: brightness(2.4); }
-  66% { transform: translateY(0) scale(.98); }
-  78% { transform: translateY(-9px) scale(1.04); }
+  0% { transform: translateY(-190px) scale(.66) rotate(7deg); opacity: 0; filter: brightness(2.4); }
+  34% { transform: translateY(-190px) scale(.66) rotate(7deg); opacity: 0; }
+  58% { transform: translateY(18px) scale(1.15) rotate(-2deg); opacity: 1; filter: brightness(2.7); }
+  67% { transform: translateY(0) scale(.96); }
+  80% { transform: translateY(-10px) scale(1.05); }
   100% { transform: translateY(0) scale(1); opacity: 1; filter: brightness(1); }
 }
 

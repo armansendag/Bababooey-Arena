@@ -928,19 +928,25 @@
       reveal.innerHTML = `
         <div class="pack-reveal-header">
           <div>
-            <h2>${escapeHtml(state.packReveal.pack?.name || "Pack")} Results</h2>
-            <p class="small">${best ? `Best pull: ${escapeHtml(best.rarity)} ${escapeHtml(best.name)}` : "Cards added to your collection."}</p>
+            <span class="pack-reveal-kicker">Pack opened</span>
+            <h2>${escapeHtml(state.packReveal.pack?.name || "Pack")} Reveal</h2>
+            <p class="small">${best ? `Best pull charging: ${escapeHtml(best.rarity)} ${escapeHtml(best.name)}` : "Cards added to your collection."}</p>
           </div>
           <div class="pill-row">
             <span class="pill">${state.packReveal.opening?.free ? "Free pack" : `${state.packReveal.pack?.price || 0} coins`}</span>
             <span class="pill">${state.packReveal.opening?.duplicateCoins || 0} duplicate coins</span>
           </div>
         </div>
+        <div class="pack-drumroll">
+          <span></span><span></span><span></span><strong>Revealing cards...</strong>
+        </div>
+        ${best ? `<div class="pack-spotlight ${escapeHtml(best.rarity || "common")}"><span>Biggest pull</span><strong>${escapeHtml(best.name)}</strong><em>${escapeHtml(best.rarity || "common")}</em></div>` : ""}
       `;
       const row = el("div", "reveal-row pack-results-grid");
       state.packReveal.cards.forEach((result, index) => {
         const node = renderCard(result.card, { reveal: true });
-        node.style.animationDelay = `${index * 120}ms`;
+        node.style.animationDelay = `${650 + index * 420}ms`;
+        node.style.setProperty("--reveal-index", index);
         const resultNote = result.added
           ? `Added to collection (x${result.ownedCount})`
           : `Duplicate converted: +${result.duplicateCoins} coins`;
