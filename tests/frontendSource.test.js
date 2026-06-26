@@ -32,6 +32,14 @@ test("online battle keeps viewer side stable and exposes forfeit", () => {
   assert.match(appSource, /Forfeit this match\?/);
 });
 
+test("online screen ignores abandoned saved matches", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /state\.battlePhase = match\.status === "active" \? "playing" : "ended"/);
+  assert.match(appSource, /if \(match\.status === "active"\) \{\s*openOnlineMatch\(match\);\s*return;\s*\}/s);
+  assert.match(appSource, /localStorage\.removeItem\("bababooey_online_match_id"\)/);
+});
+
 test("top notifications fade and clear automatically", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
   const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");

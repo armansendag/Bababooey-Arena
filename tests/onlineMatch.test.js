@@ -347,6 +347,40 @@ test("disconnect timeout abandons a match and reconnect before timeout preserves
   assert.equal(abandoned.winnerId, playerB.user.id);
 });
 
+test("abandoned matches are not returned as active online matches", () => {
+  const { app, playerA, playerB } = makeOnlineFixture();
+  const challenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const match = app.services.onlineMatches.acceptChallenge(playerB.user.id, challenge.id);
+
+  app.services.onlineMatches.command(playerA.user.id, match.id, { type: "forfeit" });
+
+  const playerMatches = app.services.onlineMatches.listMatches(playerA.user.id);
+  assert.equal(playerMatches.some((item) => item.id === match.id), false);
+  assert.equal(app.services.onlineMatches.history(playerA.user.id).some((entry) => entry.matchId === match.id), true);
+});
+
+test("active player forfeits after one minute without ending the turn", () => {
+  const now = Date.now();
+  const { app, playerA, playerB } = makeOnlineFixture({
+    onlineMatchOptions: {
+      turnTimeoutMs: 60_000,
+      nowMs: () => now + 60_001
+    }
+  });
+  const challenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const match = app.services.onlineMatches.acceptChallenge(playerB.user.id, challenge.id);
+  const stored = app.store.onlineMatches.get(match.id);
+  stored.turnStartedAt = new Date(now).toISOString();
+
+  const activeMatches = app.services.onlineMatches.listMatches(playerA.user.id);
+  const finished = app.services.onlineMatches.getMatch(playerB.user.id, match.id);
+
+  assert.equal(activeMatches.some((item) => item.id === match.id), false);
+  assert.equal(finished.status, "finished");
+  assert.equal(finished.winnerId, playerB.user.id);
+  assert.ok(app.store.onlineMatchEvents.some((event) => event.matchId === match.id && event.eventType === "turn_timeout_forfeit"));
+});
+
 test("malformed commands are rejected before reaching gameplay rules", async (t) => {
   const { app, playerA, playerB } = makeOnlineFixture();
   const { server, baseUrl } = await listen(app);

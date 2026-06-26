@@ -17,6 +17,7 @@ const RANKED_WIN_DELTA = 25;
 const RANKED_LOSS_DELTA = -15;
 const DEFAULT_DISCONNECT_TIMEOUT_MS = 30000;
 const DEFAULT_STALE_MATCH_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_TURN_TIMEOUT_MS = 60_000;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -67,7 +68,8 @@ function serializeOnlineMatch(store, match) {
     disconnectedPlayerIds: match.playerIds.filter((id) => !(match.connectedPlayerIds || new Set()).has(id)),
     state: clone(match.state),
     createdAt: match.createdAt,
-    endedAt: match.endedAt
+    endedAt: match.endedAt,
+    turnStartedAt: match.turnStartedAt
   };
 }
 
@@ -75,6 +77,7 @@ function createOnlineMatchService(store, options = {}) {
   const cardCatalog = options.cardCatalog || cardsById;
   const disconnectTimeoutMs = options.disconnectTimeoutMs ?? DEFAULT_DISCONNECT_TIMEOUT_MS;
   const staleMatchMs = options.staleMatchMs ?? DEFAULT_STALE_MATCH_MS;
+  const turnTimeoutMs = options.turnTimeoutMs ?? DEFAULT_TURN_TIMEOUT_MS;
   const nowMs = options.nowMs || (() => Date.now());
   const listeners = new Map();
   const rateBuckets = new Map();
@@ -282,6 +285,54 @@ function createOnlineMatchService(store, options = {}) {
     }
   }
 
+  function clearTurnTimer(match) {
+    if (match.turnTimer) {
+      clearTimeout(match.turnTimer);
+      match.turnTimer = null;
+    }
+  }
+
+  function activeTurnTimedOut(match) {
+    if (!match || match.status !== "active" || turnTimeoutMs < 0) return false;
+    const startedAt = Date.parse(match.turnStartedAt || match.createdAt);
+    return Number.isFinite(startedAt) && nowMs() - startedAt >= turnTimeoutMs;
+  }
+
+  function forfeitActiveTurn(match) {
+    if (!match || match.status !== "active") return;
+    const loserId = match.state.activePlayerId;
+    const winnerId = match.playerIds.find((id) => id !== loserId) || null;
+    const previousLength = match.state.eventLog.length;
+    match.state.eventLog.push({
+      sequence: match.state.eventLog.length + 1,
+      turnNumber: match.state.turnNumber,
+      type: "turn_timeout_forfeit",
+      playerId: loserId,
+      payload: { winnerId, loserId, timeoutMs: turnTimeoutMs }
+    });
+    persistNewEvents(match, previousLength);
+    finalizeMatch(match, "finished", winnerId);
+  }
+
+  function scheduleTurnTimeout(match) {
+    clearTurnTimer(match);
+    if (!match || match.status !== "active" || turnTimeoutMs < 0) return;
+    const startedAt = Date.parse(match.turnStartedAt || match.createdAt);
+    const elapsed = Number.isFinite(startedAt) ? Math.max(0, nowMs() - startedAt) : 0;
+    const remaining = Math.max(0, turnTimeoutMs - elapsed);
+    const timer = setTimeout(() => {
+      const latest = store.onlineMatches.get(match.id);
+      if (!latest || latest.status !== "active") return;
+      if (activeTurnTimedOut(latest)) {
+        forfeitActiveTurn(latest);
+        return;
+      }
+      scheduleTurnTimeout(latest);
+    }, remaining);
+    if (typeof timer.unref === "function") timer.unref();
+    match.turnTimer = timer;
+  }
+
   function createOnlineMatch({ playerOneId, playerTwoId, mode = "friend", challengeId = null }) {
     const context = mode === "friend" ? "accepting a challenge" : `joining ${mode} queue`;
     const playerOneLoadout = findActiveLoadout(playerOneId, context);
@@ -309,12 +360,15 @@ function createOnlineMatchService(store, options = {}) {
       connectedPlayerIds: new Set(),
       disconnectedAt: {},
       disconnectTimers: new Map(),
+      turnStartedAt: nowIso(),
+      turnTimer: null,
       rewarded: false,
       createdAt: nowIso(),
       endedAt: null
     };
     store.onlineMatches.set(match.id, match);
     persistNewEvents(match, 0);
+    scheduleTurnTimeout(match);
     persistStore();
     return match;
   }
@@ -348,8 +402,13 @@ function createOnlineMatchService(store, options = {}) {
   }
 
   function listMatches(userId) {
+    for (const match of store.onlineMatches.values()) {
+      if (match.status === "active" && match.playerIds.includes(userId) && activeTurnTimedOut(match)) {
+        forfeitActiveTurn(match);
+      }
+    }
     return Array.from(store.onlineMatches.values())
-      .filter((match) => match.playerIds.includes(userId))
+      .filter((match) => match.status === "active" && match.playerIds.includes(userId))
       .map((match) => serializeOnlineMatch(store, match));
   }
 
@@ -440,6 +499,8 @@ function createOnlineMatchService(store, options = {}) {
       error.status = 404;
       throw error;
     }
+    if (activeTurnTimedOut(match)) forfeitActiveTurn(match);
+    if (match.status === "active") scheduleTurnTimeout(match);
     return serializeOnlineMatch(store, match);
   }
 
@@ -576,6 +637,7 @@ function createOnlineMatchService(store, options = {}) {
 
   function finalizeMatch(match, status, winnerId) {
     if (match.status === "finished" || match.status === "abandoned") return;
+    clearTurnTimer(match);
     match.status = status;
     match.winnerId = winnerId;
     match.endedAt = nowIso();
@@ -605,6 +667,7 @@ function createOnlineMatchService(store, options = {}) {
       logMatchCommand(null, userId, intent, error, "rejected");
       throw error;
     }
+    if (activeTurnTimedOut(match)) forfeitActiveTurn(match);
     if (match.status !== "active") {
       const error = new Error("Match is not active.");
       error.status = 400;
@@ -612,6 +675,7 @@ function createOnlineMatchService(store, options = {}) {
       throw error;
     }
     const previousLength = match.state.eventLog.length;
+    const previousActivePlayerId = match.state.activePlayerId;
     let safeIntent;
     try {
       safeIntent = validateIntent(intent);
@@ -646,6 +710,9 @@ function createOnlineMatchService(store, options = {}) {
     persistNewEvents(match, previousLength);
     if (match.state.status === "finished") {
       finalizeMatch(match, "finished", match.state.winnerId);
+    } else if (match.state.activePlayerId !== previousActivePlayerId) {
+      match.turnStartedAt = nowIso();
+      scheduleTurnTimeout(match);
     }
     persistStore();
     const serialized = serializeOnlineMatch(store, match);
@@ -657,12 +724,14 @@ function createOnlineMatchService(store, options = {}) {
   function markConnected(userId, matchId) {
     const match = store.onlineMatches.get(matchId);
     if (!match || !match.playerIds.includes(userId)) return null;
+    if (activeTurnTimedOut(match)) forfeitActiveTurn(match);
     if (match.disconnectTimers?.has(userId)) {
       clearTimeout(match.disconnectTimers.get(userId));
       match.disconnectTimers.delete(userId);
     }
     match.connectedPlayerIds.add(userId);
     delete match.disconnectedAt?.[userId];
+    if (match.status === "active") scheduleTurnTimeout(match);
     persistStore();
     const serialized = serializeOnlineMatch(store, match);
     emitToMatch(match, { type: "player_connected", playerId: userId, match: serialized });
@@ -731,6 +800,11 @@ function createOnlineMatchService(store, options = {}) {
     let cleaned = 0;
     for (const match of store.onlineMatches.values()) {
       if (match.status !== "active") continue;
+      if (activeTurnTimedOut(match)) {
+        forfeitActiveTurn(match);
+        cleaned += 1;
+        continue;
+      }
       const created = Date.parse(match.createdAt);
       if (Number.isFinite(created) && created < cutoff) {
         finalizeMatch(match, "abandoned", null);

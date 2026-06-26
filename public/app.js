@@ -1335,7 +1335,7 @@
     state.onlineMatch = match;
     state.match = match.state;
     state.battleMode = "online";
-    state.battlePhase = match.status === "finished" ? "ended" : "playing";
+    state.battlePhase = match.status === "active" ? "playing" : "ended";
     state.view = "battle";
     state.selected = null;
     localStorage.setItem("bababooey_online_match_id", match.id);
@@ -1787,8 +1787,11 @@
       if (savedMatchId) {
         try {
           const match = await api(`/online-matches/${savedMatchId}`);
-          openOnlineMatch(match);
-          return;
+          if (match.status === "active") {
+            openOnlineMatch(match);
+            return;
+          }
+          localStorage.removeItem("bababooey_online_match_id");
         } catch {
           localStorage.removeItem("bababooey_online_match_id");
         }

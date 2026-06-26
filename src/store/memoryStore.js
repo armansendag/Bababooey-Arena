@@ -82,7 +82,8 @@ function serializeStore(store) {
     onlineMatches: Array.from(store.onlineMatches.entries()).map(([id, match]) => [id, {
       ...match,
       connectedPlayerIds: Array.from(match.connectedPlayerIds || []),
-      disconnectTimers: undefined
+      disconnectTimers: undefined,
+      turnTimer: undefined
     }]),
     onlineMatchEvents: store.onlineMatchEvents,
     matchHistory: store.matchHistory,
@@ -224,7 +225,8 @@ function hydrateStore(store, snapshot) {
   store.onlineMatches = new Map((snapshot.onlineMatches || []).map(([id, match]) => [id, {
     ...match,
     connectedPlayerIds: new Set(match.connectedPlayerIds || []),
-    disconnectTimers: new Map()
+    disconnectTimers: new Map(),
+    turnTimer: null
   }]));
   store.onlineMatchEvents = snapshot.onlineMatchEvents || [];
   store.matchHistory = snapshot.matchHistory || [];
