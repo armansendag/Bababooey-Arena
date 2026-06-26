@@ -17,6 +17,8 @@ The launch shop includes Starter Pack, Basic Pack, Rare Pack, Epic Pack, Mythic 
 
 Quests provide extra coin income. One-time quests give larger early boosts for first match, first win, first pack, ranked tryout, and rare pulls. Daily game quests reward one play and one win each day. Repeatable quests reset after claiming and permanently reward steady play, wins, casual/ranked sessions, pack opening, and rare-plus pulls. Online match completion advances `play_game` for both players and `win_game` for the winner.
 
+Ranked matches pay more than casual matches to reward the higher-stakes queue: casual wins/losses grant 50/10 coins, while ranked wins/losses grant 150/40 coins. The repeatable ranked session quest also pays more than the casual session quest.
+
 ## Run Locally
 
 Install dependencies, then start the server:

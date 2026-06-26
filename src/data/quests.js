@@ -111,7 +111,7 @@ const quests = [
     name: "Ranked Ladder Snacks",
     objectiveType: "play_ranked",
     targetValue: 5,
-    rewardCoins: 260
+    rewardCoins: 400
   },
   {
     id: "repeat_open_pack",

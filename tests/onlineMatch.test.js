@@ -623,6 +623,8 @@ test("casual matches grant casual rewards only once", () => {
   assert.equal(app.store.profiles.get(playerA.user.id).coins, 1050);
   assert.equal(app.store.profiles.get(playerB.user.id).coins, 1010);
   assert.equal(app.store.matchHistory.find((entry) => entry.playerId === playerA.user.id).mode, "casual");
+  assert.equal(app.store.matchHistory.find((entry) => entry.playerId === playerA.user.id).rewardCoins, 50);
+  assert.equal(app.store.matchHistory.find((entry) => entry.playerId === playerB.user.id).rewardCoins, 10);
   assert.equal(app.store.coinTransactions.filter((tx) => tx.sourceId === finished.id).length, 2);
 });
 
@@ -663,8 +665,10 @@ test("ranked matches update ratings, tiers, rewards, and avoid duplicate grants"
   assert.equal(ratingA.tier, "Silver");
   assert.equal(ratingB.rating, 985);
   assert.equal(ratingB.tier, "Bronze");
-  assert.equal(app.store.profiles.get(playerA.user.id).coins, 1100);
-  assert.equal(app.store.profiles.get(playerB.user.id).coins, 1025);
+  assert.equal(app.store.profiles.get(playerA.user.id).coins, 1150);
+  assert.equal(app.store.profiles.get(playerB.user.id).coins, 1040);
+  assert.equal(app.store.matchHistory.find((entry) => entry.playerId === playerA.user.id).rewardCoins, 150);
+  assert.equal(app.store.matchHistory.find((entry) => entry.playerId === playerB.user.id).rewardCoins, 40);
   app.store.onlineMatches.get(finished.id).rewarded = false;
   app.services.onlineMatches.cleanupInactiveMatches();
   assert.equal(app.store.coinTransactions.filter((tx) => tx.sourceId === finished.id).length, 2);

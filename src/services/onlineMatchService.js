@@ -10,7 +10,7 @@ const LOSS_REWARD_COINS = 25;
 const MATCH_REWARDS = {
   friend: { win: WIN_REWARD_COINS, loss: LOSS_REWARD_COINS },
   casual: { win: 50, loss: 10 },
-  ranked: { win: 100, loss: 25 }
+  ranked: { win: 150, loss: 40 }
 };
 const STARTING_RATING = 1000;
 const RANKED_WIN_DELTA = 25;
