@@ -32,6 +32,33 @@ test("online battle keeps viewer side stable and exposes forfeit", () => {
   assert.match(appSource, /Forfeit this match\?/);
 });
 
+test("battle commands exit attack mode and only show ready roster cards", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /pendingBattleCommand/);
+  assert.match(appSource, /state\.feedback = buildFeedback\(previous, match\.state, state\.pendingBattleCommand\)/);
+  assert.match(appSource, /state\.pendingBattleCommand = null;\s*state\.selected = null;/);
+  assert.match(appSource, /command\.type === "attack" \|\| command\.type === "endTurn" \|\| command\.type === "forfeit"/);
+  assert.match(appSource, /function readyRosterEntries\(player\)/);
+  assert.match(appSource, /entry\.zone !== "ready"/);
+  assert.match(appSource, /player\.spellCooldowns\?\.\[entry\.cardId\]/);
+  assert.match(appSource, /readyRosterEntries\(rosterPlayer\)\.forEach/);
+});
+
+test("battle damage shows minus ticks and defeated units fade out", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /function damageBurst\(amount\)/);
+  assert.match(appSource, /damage-ticks/);
+  assert.match(appSource, /function defeatedGhost\(cardId, type, className\)/);
+  assert.match(appSource, /feedback\.deathCardId = deathEvent\.payload\.cardId/);
+  assert.match(appSource, /defeatedGhost\(state\.feedback\.deathCardId, "troop", "death"\)/);
+  assert.match(cssSource, /\.damage-ticks/);
+  assert.match(cssSource, /@keyframes damageTick/);
+  assert.match(cssSource, /to \{ transform: scale\(\.82\) rotate\(-4deg\); opacity: 0; \}/);
+});
+
 test("online screen ignores abandoned saved matches", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 

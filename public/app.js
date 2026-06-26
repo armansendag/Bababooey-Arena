@@ -60,6 +60,7 @@
     battleMode: "local",
     battlePhase: "start",
     selected: null,
+    pendingBattleCommand: null,
     detailCard: null,
     tutorialOpen: false,
     settingsOpen: false,
@@ -192,11 +193,15 @@
       state.battlePhase = match.status === "finished" ? "ended" : "playing";
       state.opponentDisconnected = (match.disconnectedPlayerIds || []).some((id) => id !== state.profile?.userId);
       if (message.type === "match_state") {
-        state.feedback = buildFeedback(previous, match.state, null);
+        state.feedback = buildFeedback(previous, match.state, state.pendingBattleCommand);
+        state.pendingBattleCommand = null;
+        state.selected = null;
       }
+      if (match.status !== "active" || previous?.activePlayerId !== match.state.activePlayerId) state.selected = null;
     }
     if (message.type === "error") {
       state.message = message.error;
+      state.pendingBattleCommand = null;
     }
     render();
   }
@@ -333,9 +338,13 @@
   }
 
   function buildFeedback(previous, next, command) {
-    const event = next.eventLog[next.eventLog.length - 1];
+    const recentEvents = next.eventLog.slice(previous?.eventLog?.length || Math.max(0, next.eventLog.length - 4));
+    const actionEvent = [...recentEvents].reverse().find((item) => item.payload?.result?.damage || item.payload?.result?.selfCoreDamage || item.type === "troop_attacked" || item.type === "spell_cast") || recentEvents[recentEvents.length - 1];
+    const event = actionEvent || next.eventLog[next.eventLog.length - 1];
     if (!event) return null;
     const result = event.payload?.result || {};
+    const deathEvent = [...recentEvents].reverse().find((item) => item.type === "troop_defeated");
+    const breakEvent = [...recentEvents].reverse().find((item) => item.type === "enchantment_destroyed");
     const feedback = {
       sequence: event.sequence,
       type: event.type,
@@ -344,8 +353,16 @@
       target: command?.target || event.payload?.target || null,
       attackerInstanceId: command?.attackerInstanceId || event.payload?.attackerInstanceId || null
     };
-    if (event.type === "troop_defeated") feedback.deathInstanceId = event.payload.instanceId;
-    if (event.type === "enchantment_destroyed") feedback.breakInstanceId = event.payload.instanceId;
+    if (deathEvent) feedback.deathInstanceId = deathEvent.payload.instanceId;
+    if (breakEvent) feedback.breakInstanceId = breakEvent.payload.instanceId;
+    if (deathEvent) {
+      feedback.deathCardId = deathEvent.payload.cardId;
+      feedback.deathPlayerId = deathEvent.playerId;
+    }
+    if (breakEvent) {
+      feedback.breakCardId = breakEvent.payload.cardId;
+      feedback.breakPlayerId = breakEvent.playerId;
+    }
     if (event.type === "match_finished") feedback.matchEnd = true;
     return feedback;
   }
@@ -1397,6 +1414,18 @@
     return node;
   }
 
+  function readyRosterEntries(player) {
+    return player.roster.filter((entry) => {
+      const item = card(entry.cardId);
+      if (!item) return false;
+      if (entry.zone !== "ready") return false;
+      if ((entry.cooldownRemaining || 0) > 0) return false;
+      if ((player.spellCooldowns?.[entry.cardId] || 0) > 0) return false;
+      if (item.type === "enchantment" && player.enchantments.some((active) => active.cardId === entry.cardId)) return false;
+      return true;
+    });
+  }
+
   function renderUnit(unit, owner, type) {
     const item = card(unit.cardId);
     const isSelected = state.selected?.instanceId === unit.instanceId;
@@ -1408,7 +1437,7 @@
       <strong>${escapeHtml(item.name)}</strong>
       <div class="label"><span class="type-icon">${typeIcon(type)}</span> ${type}</div>
       <div class="stats">${item.attack !== undefined ? `<span class="stat">A ${item.attack}</span>` : ""}${unit.currentDefense !== undefined ? `<span class="stat">D ${unit.currentDefense}</span>` : ""}<span class="stat">HP ${unit.hp}</span></div>
-      ${isDamaged && state.feedback?.damage ? `<div class="damage-number">-${state.feedback.damage}</div>` : ""}
+      ${isDamaged && state.feedback?.damage ? damageBurst(state.feedback.damage) : ""}
     `;
     const active = activePlayer();
     const enemy = owner.id !== active?.id;
@@ -1450,6 +1479,24 @@
     return node;
   }
 
+  function damageBurst(amount) {
+    return `<div class="damage-number">-${amount}</div><div class="damage-ticks"><span></span><span></span><span></span></div>`;
+  }
+
+  function defeatedGhost(cardId, type, className) {
+    const item = card(cardId);
+    if (!item) return null;
+    const node = el("div", `unit ${item.rarity || "common"} ${className}`);
+    node.innerHTML = `
+      <div class="rarity-frame"></div>
+      <strong>${escapeHtml(item.name)}</strong>
+      <div class="label"><span class="type-icon">${typeIcon(type)}</span> ${type}</div>
+      <div class="stats">${item.attack !== undefined ? `<span class="stat">A ${item.attack}</span>` : ""}${item.defense !== undefined ? `<span class="stat">D ${item.defense}</span>` : ""}${item.hp !== undefined ? `<span class="stat">HP ${item.hp}</span>` : ""}</div>
+      ${state.feedback?.damage ? damageBurst(state.feedback.damage) : ""}
+    `;
+    return node;
+  }
+
   function playerZone(player, top) {
     const active = state.match.activePlayerId === player.id;
     const zone = el("div", "player-zone");
@@ -1457,7 +1504,7 @@
     const core = el("div", `core ${active ? "active" : ""} ${coreHit ? "damage core-hit" : ""}`);
     const maxCoreHp = card(player.coreCardId)?.hp || 20;
     const manaCap = player.manaBankCap || player.baseMaxMana || 20;
-    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, Math.min(100, (player.coreHp / maxCoreHp) * 100))}%"></span></div><div>${player.coreHp} / ${maxCoreHp} HP</div><div class="small">Bank ${player.currentMana}/${manaCap}${player.temporaryMana ? ` (+${player.temporaryMana} temp)` : ""}</div>${coreHit && state.feedback?.damage ? `<div class="damage-number core-damage">-${state.feedback.damage}</div>` : ""}`;
+    core.innerHTML = `<strong>${playerName(player.id)} Core</strong><div class="core-orb">CORE</div><div class="hp"><span style="width:${Math.max(0, Math.min(100, (player.coreHp / maxCoreHp) * 100))}%"></span></div><div>${player.coreHp} / ${maxCoreHp} HP</div><div class="small">Bank ${player.currentMana}/${manaCap}${player.temporaryMana ? ` (+${player.temporaryMana} temp)` : ""}</div>${coreHit && state.feedback?.damage ? damageBurst(state.feedback.damage) : ""}`;
     if (player.id !== activePlayer()?.id && state.selected?.kind === "attacker" && player.troops.length === 0) {
       core.classList.add("targetable");
       core.setAttribute("title", "Valid core target");
@@ -1471,10 +1518,16 @@
     const lane = el("div", "lane");
     const enchantments = el("div", "slot-row");
     player.enchantments.forEach((item) => enchantments.appendChild(renderUnit(item, player, "enchantment")));
-    if (!player.enchantments.length) enchantments.appendChild(el("div", "empty", "No enchantments"));
+    if (state.feedback?.breakPlayerId === player.id && state.feedback?.breakCardId) {
+      enchantments.appendChild(defeatedGhost(state.feedback.breakCardId, "enchantment", "break"));
+    }
+    if (!enchantments.children.length) enchantments.appendChild(el("div", "empty", "No enchantments"));
     const troops = el("div", "slot-row");
     player.troops.forEach((item) => troops.appendChild(renderUnit(item, player, "troop")));
-    if (!player.troops.length) troops.appendChild(el("div", "empty", "No troops"));
+    if (state.feedback?.deathPlayerId === player.id && state.feedback?.deathCardId) {
+      troops.appendChild(defeatedGhost(state.feedback.deathCardId, "troop", "death"));
+    }
+    if (!troops.children.length) troops.appendChild(el("div", "empty", "No troops"));
     if (top) lane.append(enchantments, troops);
     else lane.append(troops, enchantments);
     const info = el("div", "section");
@@ -1615,7 +1668,7 @@
     const rosterPlayer = state.battleMode === "online" ? bottomPlayer : active;
     rosterPanel.appendChild(el("h2", "", `${playerName(rosterPlayer.id)} Available Roster`));
     const roster = el("div", "roster-list");
-    rosterPlayer.roster.forEach((entry) => roster.appendChild(miniCardForRoster(entry, rosterPlayer)));
+    readyRosterEntries(rosterPlayer).forEach((entry) => roster.appendChild(miniCardForRoster(entry, rosterPlayer)));
     if (rosterPlayer.coinAvailable) {
       const coin = el("div", "mini-card");
       coin.innerHTML = `<div class="mana">0</div><strong>Coin</strong><div class="label">spell</div><div class="small">+1 temporary mana</div>`;
@@ -1626,6 +1679,7 @@
       });
       roster.prepend(coin);
     }
+    if (!roster.children.length) roster.appendChild(el("div", "empty", "No ready cards."));
     rosterPanel.appendChild(roster);
     const logPanel = el("section", "section");
     logPanel.appendChild(el("h2", "", "Event Log"));
@@ -1678,11 +1732,14 @@
 
   function sendBattleCommand(command) {
     if (state.selected?.kind === "spell" && command.type !== "castSpell") state.selected = null;
+    if (command.type === "attack" || command.type === "endTurn" || command.type === "forfeit") state.selected = null;
     if (state.battleMode === "online" && state.onlineMatch?.id) {
       const intent = { ...command };
       delete intent.playerId;
       if (state.socket?.readyState === WebSocket.OPEN) {
+        state.pendingBattleCommand = command;
         state.socket.send(JSON.stringify({ type: "command", matchId: state.onlineMatch.id, command: intent }));
+        render();
         return;
       }
       api(`/online-matches/${state.onlineMatch.id}/commands`, { method: "POST", body: intent })
