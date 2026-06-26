@@ -762,17 +762,34 @@
     `;
     panel.querySelectorAll("[data-card-filter]").forEach((control) => {
       control.addEventListener("input", () => {
-        const key = control.getAttribute("data-card-filter");
-        state.cardFilters[key] = control.type === "checkbox" ? control.checked : control.value;
-        render();
+        updateCardFilter(control);
       });
       control.addEventListener("change", () => {
-        const key = control.getAttribute("data-card-filter");
-        state.cardFilters[key] = control.type === "checkbox" ? control.checked : control.value;
-        render();
+        updateCardFilter(control);
       });
     });
     return panel;
+  }
+
+  function updateCardFilter(control) {
+    const key = control.getAttribute("data-card-filter");
+    const shouldRestoreFocus = key === "query" && document.activeElement === control;
+    const selectionStart = control.selectionStart;
+    const selectionEnd = control.selectionEnd;
+    state.cardFilters[key] = control.type === "checkbox" ? control.checked : control.value;
+    render();
+    if (shouldRestoreFocus) {
+      restoreCardFilterFocus(key, selectionStart, selectionEnd);
+    }
+  }
+
+  function restoreCardFilterFocus(key, selectionStart, selectionEnd) {
+    const nextControl = document.querySelector(`[data-card-filter="${key}"]`);
+    if (!nextControl) return;
+    nextControl.focus();
+    if (typeof nextControl.setSelectionRange === "function" && selectionStart !== null && selectionEnd !== null) {
+      nextControl.setSelectionRange(selectionStart, selectionEnd);
+    }
   }
 
   function filteredCollection() {

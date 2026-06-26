@@ -143,6 +143,16 @@ test("collection and loadout card menus sort by rarity with owned-first toggles"
   assert.match(cssSource, /\.checkbox-filter/);
 });
 
+test("collection search keeps focus while filtering", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /function updateCardFilter\(control\)/);
+  assert.match(appSource, /key === "query" && document\.activeElement === control/);
+  assert.match(appSource, /function restoreCardFilterFocus\(key, selectionStart, selectionEnd\)/);
+  assert.match(appSource, /nextControl\.focus\(\)/);
+  assert.match(appSource, /nextControl\.setSelectionRange\(selectionStart, selectionEnd\)/);
+});
+
 test("rarity badge has dedicated header space instead of covering card names", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
   const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
