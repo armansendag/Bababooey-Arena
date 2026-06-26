@@ -637,11 +637,15 @@ test("completed online matches advance play and win quests", () => {
   const loserQuests = app.services.quests.list(playerB.user.id);
   assert.equal(winnerQuests.find((quest) => quest.id === "one_time_first_match").progress, 1);
   assert.equal(winnerQuests.find((quest) => quest.id === "one_time_first_win").progress, 1);
+  assert.equal(winnerQuests.find((quest) => quest.id === "daily_play_game").progress, 1);
+  assert.equal(winnerQuests.find((quest) => quest.id === "daily_win_game").progress, 1);
   assert.equal(winnerQuests.find((quest) => quest.id === "repeat_play_game").progress, 1);
   assert.equal(winnerQuests.find((quest) => quest.id === "repeat_win_game").progress, 1);
   assert.equal(winnerQuests.find((quest) => quest.id === "repeat_casual_grind").progress, 1);
   assert.equal(loserQuests.find((quest) => quest.id === "one_time_first_match").progress, 1);
   assert.equal(loserQuests.find((quest) => quest.id === "one_time_first_win").progress, 0);
+  assert.equal(loserQuests.find((quest) => quest.id === "daily_play_game").progress, 1);
+  assert.equal(loserQuests.find((quest) => quest.id === "daily_win_game").progress, 0);
   assert.equal(loserQuests.find((quest) => quest.id === "repeat_play_game").progress, 1);
   assert.equal(loserQuests.find((quest) => quest.id === "repeat_win_game").progress, 0);
 });

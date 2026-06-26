@@ -50,6 +50,22 @@ const quests = [
     rewardCoins: 225
   },
   {
+    id: "daily_play_game",
+    period: "daily",
+    name: "Daily Game Check-In",
+    objectiveType: "play_game",
+    targetValue: 1,
+    rewardCoins: 90
+  },
+  {
+    id: "daily_win_game",
+    period: "daily",
+    name: "Daily Dub Bonus",
+    objectiveType: "win_game",
+    targetValue: 1,
+    rewardCoins: 160
+  },
+  {
     id: "repeat_play_game",
     period: "repeatable",
     name: "Keep Playing",

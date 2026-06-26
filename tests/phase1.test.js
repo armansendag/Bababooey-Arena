@@ -336,6 +336,29 @@ test("repeatable quests pay out and reset for another cycle", () => {
   assert.equal(app.store.profiles.get(player.user.id).coins, 1070);
 });
 
+test("daily game quests can be claimed once per day and reset the next day", () => {
+  const app = createApp();
+  const player = register(app, "dailyquest@example.com", "Daily Quester");
+
+  app.services.quests.recordProgress(player.user.id, "play_game", 1);
+  const claimed = app.services.quests.claim(player.user.id, "daily_play_game");
+  assert.equal(claimed.claimedAt !== null, true);
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1090);
+  assert.throws(() => app.services.quests.claim(player.user.id, "daily_play_game"), /already claimed/);
+
+  const key = `${player.user.id}:daily_play_game`;
+  const daily = app.store.playerQuests.get(key);
+  daily.periodStartedAt = "2000-01-01T00:00:00.000Z";
+  const reset = app.services.quests.list(player.user.id).find((quest) => quest.id === "daily_play_game");
+  assert.equal(reset.progress, 0);
+  assert.equal(reset.completedAt, null);
+  assert.equal(reset.claimedAt, null);
+
+  app.services.quests.recordProgress(player.user.id, "play_game", 1);
+  app.services.quests.claim(player.user.id, "daily_play_game");
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1180);
+});
+
 test("new players can queue into a first online match with starter decks", () => {
   const app = createApp();
   const playerA = register(app, "first-a@example.com", "First Alpha");
