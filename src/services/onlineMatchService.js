@@ -17,7 +17,7 @@ const RANKED_WIN_DELTA = 25;
 const RANKED_LOSS_DELTA = -15;
 const DEFAULT_DISCONNECT_TIMEOUT_MS = 30000;
 const DEFAULT_STALE_MATCH_MS = 24 * 60 * 60 * 1000;
-const DEFAULT_TURN_TIMEOUT_MS = 60_000;
+const DEFAULT_TURN_TIMEOUT_MS = 120_000;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -69,7 +69,7 @@ function serializeOnlineMatch(store, match) {
     state: clone(match.state),
     createdAt: match.createdAt,
     endedAt: match.endedAt,
-    turnStartedAt: match.turnStartedAt
+    lastActionAt: match.lastActionAt || match.turnStartedAt || match.createdAt
   };
 }
 
@@ -82,6 +82,10 @@ function createOnlineMatchService(store, options = {}) {
   const listeners = new Map();
   const rateBuckets = new Map();
   if (!store.matchmakingQueues) store.matchmakingQueues = { casual: [], ranked: [] };
+
+  function currentIso() {
+    return new Date(nowMs()).toISOString();
+  }
 
   function rateLimit(userId, action, limit, windowMs) {
     const key = `${userId}:${action}`;
@@ -294,8 +298,8 @@ function createOnlineMatchService(store, options = {}) {
 
   function activeTurnTimedOut(match) {
     if (!match || match.status !== "active" || turnTimeoutMs < 0) return false;
-    const startedAt = Date.parse(match.turnStartedAt || match.createdAt);
-    return Number.isFinite(startedAt) && nowMs() - startedAt >= turnTimeoutMs;
+    const lastActionAt = Date.parse(match.lastActionAt || match.turnStartedAt || match.createdAt);
+    return Number.isFinite(lastActionAt) && nowMs() - lastActionAt >= turnTimeoutMs;
   }
 
   function forfeitActiveTurn(match) {
@@ -317,8 +321,8 @@ function createOnlineMatchService(store, options = {}) {
   function scheduleTurnTimeout(match) {
     clearTurnTimer(match);
     if (!match || match.status !== "active" || turnTimeoutMs < 0) return;
-    const startedAt = Date.parse(match.turnStartedAt || match.createdAt);
-    const elapsed = Number.isFinite(startedAt) ? Math.max(0, nowMs() - startedAt) : 0;
+    const lastActionAt = Date.parse(match.lastActionAt || match.turnStartedAt || match.createdAt);
+    const elapsed = Number.isFinite(lastActionAt) ? Math.max(0, nowMs() - lastActionAt) : 0;
     const remaining = Math.max(0, turnTimeoutMs - elapsed);
     const timer = setTimeout(() => {
       const latest = store.onlineMatches.get(match.id);
@@ -360,7 +364,7 @@ function createOnlineMatchService(store, options = {}) {
       connectedPlayerIds: new Set(),
       disconnectedAt: {},
       disconnectTimers: new Map(),
-      turnStartedAt: nowIso(),
+      lastActionAt: currentIso(),
       turnTimer: null,
       rewarded: false,
       createdAt: nowIso(),
@@ -675,7 +679,6 @@ function createOnlineMatchService(store, options = {}) {
       throw error;
     }
     const previousLength = match.state.eventLog.length;
-    const previousActivePlayerId = match.state.activePlayerId;
     let safeIntent;
     try {
       safeIntent = validateIntent(intent);
@@ -710,8 +713,8 @@ function createOnlineMatchService(store, options = {}) {
     persistNewEvents(match, previousLength);
     if (match.state.status === "finished") {
       finalizeMatch(match, "finished", match.state.winnerId);
-    } else if (match.state.activePlayerId !== previousActivePlayerId) {
-      match.turnStartedAt = nowIso();
+    } else {
+      match.lastActionAt = currentIso();
       scheduleTurnTimeout(match);
     }
     persistStore();

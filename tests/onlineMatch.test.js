@@ -359,18 +359,19 @@ test("abandoned matches are not returned as active online matches", () => {
   assert.equal(app.services.onlineMatches.history(playerA.user.id).some((entry) => entry.matchId === match.id), true);
 });
 
-test("active player forfeits after one minute without ending the turn", () => {
-  const now = Date.now();
+test("active player forfeits after two minutes without any action", () => {
+  let now = Date.now();
   const { app, playerA, playerB } = makeOnlineFixture({
     onlineMatchOptions: {
-      turnTimeoutMs: 60_000,
-      nowMs: () => now + 60_001
+      turnTimeoutMs: 120_000,
+      nowMs: () => now
     }
   });
   const challenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
   const match = app.services.onlineMatches.acceptChallenge(playerB.user.id, challenge.id);
   const stored = app.store.onlineMatches.get(match.id);
-  stored.turnStartedAt = new Date(now).toISOString();
+  stored.lastActionAt = new Date(now).toISOString();
+  now += 120_001;
 
   const activeMatches = app.services.onlineMatches.listMatches(playerA.user.id);
   const finished = app.services.onlineMatches.getMatch(playerB.user.id, match.id);
@@ -379,6 +380,33 @@ test("active player forfeits after one minute without ending the turn", () => {
   assert.equal(finished.status, "finished");
   assert.equal(finished.winnerId, playerB.user.id);
   assert.ok(app.store.onlineMatchEvents.some((event) => event.matchId === match.id && event.eventType === "turn_timeout_forfeit"));
+});
+
+test("successful actions reset the two minute inactivity forfeit timer", () => {
+  let now = Date.now();
+  const { app, playerA, playerB } = makeOnlineFixture({
+    onlineMatchOptions: {
+      turnTimeoutMs: 120_000,
+      nowMs: () => now
+    }
+  });
+  const challenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const match = app.services.onlineMatches.acceptChallenge(playerB.user.id, challenge.id);
+  const stored = app.store.onlineMatches.get(match.id);
+  stored.lastActionAt = new Date(now).toISOString();
+
+  now += 119_000;
+  app.services.onlineMatches.command(playerA.user.id, match.id, { type: "playTroop", cardId: "troop_mana_goblin" });
+  assert.equal(stored.status, "active");
+  assert.equal(stored.lastActionAt, new Date(now).toISOString());
+
+  now += 119_000;
+  assert.equal(app.services.onlineMatches.getMatch(playerA.user.id, match.id).status, "active");
+
+  now += 1_001;
+  const finished = app.services.onlineMatches.getMatch(playerB.user.id, match.id);
+  assert.equal(finished.status, "finished");
+  assert.equal(finished.winnerId, playerB.user.id);
 });
 
 test("malformed commands are rejected before reaching gameplay rules", async (t) => {
