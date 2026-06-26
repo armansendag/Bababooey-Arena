@@ -626,6 +626,26 @@ test("casual matches grant casual rewards only once", () => {
   assert.equal(app.store.coinTransactions.filter((tx) => tx.sourceId === finished.id).length, 2);
 });
 
+test("completed online matches advance play and win quests", () => {
+  const { app, playerA, playerB } = makeOnlineFixture();
+  app.services.onlineMatches.joinQueue(playerA.user.id, "casual");
+  const { match } = app.services.onlineMatches.joinQueue(playerB.user.id, "casual");
+
+  finishWithSitWin(app, match, playerA, playerB);
+
+  const winnerQuests = app.services.quests.list(playerA.user.id);
+  const loserQuests = app.services.quests.list(playerB.user.id);
+  assert.equal(winnerQuests.find((quest) => quest.id === "one_time_first_match").progress, 1);
+  assert.equal(winnerQuests.find((quest) => quest.id === "one_time_first_win").progress, 1);
+  assert.equal(winnerQuests.find((quest) => quest.id === "repeat_play_game").progress, 1);
+  assert.equal(winnerQuests.find((quest) => quest.id === "repeat_win_game").progress, 1);
+  assert.equal(winnerQuests.find((quest) => quest.id === "repeat_casual_grind").progress, 1);
+  assert.equal(loserQuests.find((quest) => quest.id === "one_time_first_match").progress, 1);
+  assert.equal(loserQuests.find((quest) => quest.id === "one_time_first_win").progress, 0);
+  assert.equal(loserQuests.find((quest) => quest.id === "repeat_play_game").progress, 1);
+  assert.equal(loserQuests.find((quest) => quest.id === "repeat_win_game").progress, 0);
+});
+
 test("ranked matches update ratings, tiers, rewards, and avoid duplicate grants", () => {
   const { app, playerA, playerB } = makeOnlineFixture();
   app.services.onlineMatches.joinQueue(playerA.user.id, "ranked");

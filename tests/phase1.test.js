@@ -271,7 +271,7 @@ test("pack opening charges coins, grants cards, converts copies beyond ten, and 
   assert.equal(result.profile.coins > 800, true);
 
   const quests = app.services.quests.list(player.user.id);
-  const openPackQuest = quests.find((quest) => quest.id === "weekly_open_packs");
+  const openPackQuest = quests.find((quest) => quest.id === "repeat_open_pack");
   assert.equal(openPackQuest.progress, 1);
 });
 
@@ -307,16 +307,33 @@ test("duplicate conversion only happens after ten owned copies", () => {
   assert.equal(beyondLimit.duplicateCoins > 0, true);
 });
 
-test("completed quests can be claimed once for coins", () => {
+test("one-time quests can be claimed once for coins", () => {
   const app = createApp();
   const player = register(app, "quest@example.com", "Quester");
 
   app.services.quests.recordProgress(player.user.id, "play_game", 1);
-  const claimed = app.services.quests.claim(player.user.id, "daily_play_game");
+  const claimed = app.services.quests.claim(player.user.id, "one_time_first_match");
 
   assert.equal(claimed.claimedAt !== null, true);
-  assert.equal(app.store.profiles.get(player.user.id).coins, 1075);
-  assert.throws(() => app.services.quests.claim(player.user.id, "daily_play_game"), /already claimed/);
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1200);
+  assert.throws(() => app.services.quests.claim(player.user.id, "one_time_first_match"), /already claimed/);
+});
+
+test("repeatable quests pay out and reset for another cycle", () => {
+  const app = createApp();
+  const player = register(app, "repeatquest@example.com", "Repeat Quester");
+
+  app.services.quests.recordProgress(player.user.id, "play_game", 1);
+  const claimed = app.services.quests.claim(player.user.id, "repeat_play_game");
+
+  assert.equal(claimed.progress, 0);
+  assert.equal(claimed.completedAt, null);
+  assert.equal(claimed.claimedAt, null);
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1035);
+
+  app.services.quests.recordProgress(player.user.id, "play_game", 1);
+  app.services.quests.claim(player.user.id, "repeat_play_game");
+  assert.equal(app.store.profiles.get(player.user.id).coins, 1070);
 });
 
 test("new players can queue into a first online match with starter decks", () => {

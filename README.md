@@ -15,6 +15,8 @@ New accounts do not receive the full card catalog and do not receive every arche
 
 The launch shop includes Starter Pack, Basic Pack, Rare Pack, Epic Pack, Mythic Pack, Chaos Pack, Archetype Pack, and Core Cache. Starter Packs only roll commons, uncommons, and rare cards.
 
+Quests provide extra coin income. One-time quests give larger early boosts for first match, first win, first pack, ranked tryout, and rare pulls. Repeatable quests reset after claiming and permanently reward steady play, wins, casual/ranked sessions, pack opening, and rare-plus pulls. Online match completion advances `play_game` for both players and `win_game` for the winner.
+
 ## Run Locally
 
 Install dependencies, then start the server:

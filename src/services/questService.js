@@ -32,7 +32,7 @@ function createQuestService(store) {
     for (const quest of store.quests.values()) {
       if (quest.objectiveType !== objectiveType) continue;
       const playerQuest = ensurePlayerQuest(playerId, quest.id);
-      if (playerQuest.claimedAt) continue;
+      if (playerQuest.claimedAt && quest.period !== "repeatable") continue;
       playerQuest.progress = Math.min(quest.targetValue, playerQuest.progress + amount);
       if (playerQuest.progress >= quest.targetValue && !playerQuest.completedAt) {
         playerQuest.completedAt = nowIso();
@@ -48,10 +48,16 @@ function createQuestService(store) {
     if (!quest) throw Object.assign(new Error("Quest not found."), { status: 404 });
     const playerQuest = ensurePlayerQuest(playerId, questId);
     if (!playerQuest.completedAt) throw Object.assign(new Error("Quest is not complete."), { status: 400 });
-    if (playerQuest.claimedAt) throw Object.assign(new Error("Quest is already claimed."), { status: 400 });
+    if (playerQuest.claimedAt && quest.period !== "repeatable") throw Object.assign(new Error("Quest is already claimed."), { status: 400 });
     playerQuest.claimedAt = nowIso();
     if (quest.rewardCoins > 0) {
       store.addCoinTransaction({ playerId, amount: quest.rewardCoins, reason: "quest_reward", sourceId: quest.id });
+    }
+    if (quest.period === "repeatable") {
+      playerQuest.progress = 0;
+      playerQuest.completedAt = null;
+      playerQuest.claimedAt = null;
+      playerQuest.periodStartedAt = nowIso();
     }
     return serialize(quest, playerQuest);
   }

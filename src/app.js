@@ -156,7 +156,7 @@ function createApp(options = {}) {
     profiles: createProfileService(store, authService),
     quests: questService
   };
-  services.onlineMatches = createOnlineMatchService(store, options.onlineMatchOptions || {});
+  services.onlineMatches = createOnlineMatchService(store, { ...(options.onlineMatchOptions || {}), questService });
 
   async function requireUser(req) {
     return services.auth.authenticate(req.headers);

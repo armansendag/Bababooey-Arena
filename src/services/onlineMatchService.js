@@ -78,6 +78,7 @@ function createOnlineMatchService(store, options = {}) {
   const disconnectTimeoutMs = options.disconnectTimeoutMs ?? DEFAULT_DISCONNECT_TIMEOUT_MS;
   const staleMatchMs = options.staleMatchMs ?? DEFAULT_STALE_MATCH_MS;
   const turnTimeoutMs = options.turnTimeoutMs ?? DEFAULT_TURN_TIMEOUT_MS;
+  const questService = options.questService || null;
   const nowMs = options.nowMs || (() => Date.now());
   const listeners = new Map();
   const rateBuckets = new Map();
@@ -570,6 +571,12 @@ function createOnlineMatchService(store, options = {}) {
         rankTierAfter: ratingChanges[playerId]?.tierAfter ?? null,
         createdAt: nowIso()
       });
+      if (questService) {
+        questService.recordProgress(playerId, "play_game", 1);
+        if (didWin) questService.recordProgress(playerId, "win_game", 1);
+        if (mode === "casual") questService.recordProgress(playerId, "play_casual", 1);
+        if (mode === "ranked") questService.recordProgress(playerId, "play_ranked", 1);
+      }
     }
     persistStore();
   }
