@@ -65,6 +65,7 @@
     settingsOpen: false,
     feedback: null,
     message: "",
+    messageFading: false,
     settings: {
       sound: false,
       animationSpeed: "normal",
@@ -72,6 +73,9 @@
       font: localStorage.getItem("bababooey_font") || "poppins"
     }
   };
+  let messageTimer = null;
+  let messageFadeTimer = null;
+  let messageTimerKey = "";
 
   const navItems = [
     ["home", "H", "Home"],
@@ -231,8 +235,41 @@
   }
 
   function setMessage(message) {
+    clearMessageTimers();
     state.message = message;
+    state.messageFading = false;
     render();
+  }
+
+  function clearMessageTimers() {
+    clearTimeout(messageTimer);
+    clearTimeout(messageFadeTimer);
+    messageTimer = null;
+    messageFadeTimer = null;
+    messageTimerKey = "";
+  }
+
+  function scheduleMessageDismiss() {
+    if (!state.message) {
+      clearMessageTimers();
+      state.messageFading = false;
+      return;
+    }
+    if (messageTimerKey === state.message) return;
+    clearMessageTimers();
+    messageTimerKey = state.message;
+    messageFadeTimer = setTimeout(() => {
+      if (messageTimerKey !== state.message) return;
+      state.messageFading = true;
+      render();
+    }, 2400);
+    messageTimer = setTimeout(() => {
+      if (messageTimerKey !== state.message) return;
+      state.message = "";
+      state.messageFading = false;
+      clearMessageTimers();
+      render();
+    }, 3200);
   }
 
   function playerName(playerId) {
@@ -365,7 +402,10 @@
     }
     sidebar.appendChild(nav);
     const main = el("main", "main");
-    if (state.message) main.appendChild(el("div", "section", `<strong>${escapeHtml(state.message)}</strong>`));
+    if (state.message) {
+      main.appendChild(el("div", `section toast-message ${state.messageFading ? "fading" : ""}`, `<strong>${escapeHtml(state.message)}</strong>`));
+      scheduleMessageDismiss();
+    }
     main.appendChild(content);
     root.append(sidebar, main);
     app.appendChild(root);
@@ -1028,7 +1068,10 @@
       renderAuth();
     });
     page.appendChild(panel);
-    if (state.message) page.appendChild(el("section", "section", `<strong>${escapeHtml(state.message)}</strong>`));
+    if (state.message) {
+      page.appendChild(el("section", `section toast-message ${state.messageFading ? "fading" : ""}`, `<strong>${escapeHtml(state.message)}</strong>`));
+      scheduleMessageDismiss();
+    }
     app.appendChild(page);
   }
 

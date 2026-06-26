@@ -176,6 +176,18 @@ button:disabled {
   padding: 14px;
 }
 
+.toast-message {
+  border-color: rgba(224, 184, 90, .55);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
+  animation: toastIn .22s ease both;
+  transition: opacity .8s ease, transform .8s ease;
+}
+
+.toast-message.fading {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .section h2,
 .section h3 {
   margin: 0 0 10px;
@@ -708,6 +720,17 @@ button:disabled {
   to {
     transform: rotateY(0) translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

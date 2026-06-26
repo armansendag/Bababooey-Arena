@@ -32,6 +32,21 @@ test("online battle keeps viewer side stable and exposes forfeit", () => {
   assert.match(appSource, /Forfeit this match\?/);
 });
 
+test("top notifications fade and clear automatically", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const cssSource = fs.readFileSync(path.join(root, "public", "styles.css"), "utf8");
+
+  assert.match(appSource, /messageFading/);
+  assert.match(appSource, /function scheduleMessageDismiss/);
+  assert.match(appSource, /setTimeout\(\(\) => \{/);
+  assert.match(appSource, /2400\)/);
+  assert.match(appSource, /3200\)/);
+  assert.match(appSource, /toast-message/);
+  assert.match(cssSource, /\.toast-message/);
+  assert.match(cssSource, /\.toast-message\.fading/);
+  assert.match(cssSource, /@keyframes toastIn/);
+});
+
 test("frontend asks for username and renders full pack shop", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 
