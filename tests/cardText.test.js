@@ -16,3 +16,24 @@ test("core and mana-effect cards have specific player-facing text", () => {
   assert.match(cardsById.get("spell_emergency_funding").rulesText, /5 true damage/);
   assert.match(cardsById.get("enchant_arcane_shield").rulesText, /50% less damage/);
 });
+
+test("card descriptions avoid generic stat and rule boilerplate", () => {
+  const forbidden = [
+    /Damage uses Attack minus Defense/i,
+    /Defense refreshes/i,
+    /HP only returns through healing/i,
+    /Cannot attack the turn it is played/i,
+    /Spells are reusable/i,
+    /Enemy troops can attack it directly/i,
+    /Copy tag:/i
+  ];
+
+  for (const card of cardsById.values()) {
+    for (const pattern of forbidden) {
+      assert.doesNotMatch(card.rulesText, pattern, `${card.id} contains generic boilerplate`);
+    }
+  }
+  assert.match(cardsById.get("troop_beast_pouncing_cub").rulesText, /Haste/);
+  assert.match(cardsById.get("spell_mana_conversion").rulesText, /destroy a target troop/i);
+  assert.match(cardsById.get("spell_mana_conversion").rulesText, /destroyed troop's mana cost/i);
+});

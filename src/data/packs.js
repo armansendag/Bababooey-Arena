@@ -58,7 +58,7 @@ const packs = [
   {
     id: "epic_pack",
     name: "Epic Pack",
-    description: "A premium pack with an epic guaranteed slot and a real legendary chase.",
+    description: "A premium pack with an epic guaranteed slot and better high-rarity value than Chaos.",
     price: 1400,
     cardsPerPack: 6,
     includeCores: false,
@@ -95,18 +95,18 @@ const packs = [
   {
     id: "chaos_pack",
     name: "Chaos Pack",
-    description: "High variance pack. Bad idea, great story.",
-    price: 900,
-    cardsPerPack: 7,
+    description: "High variance pack. Cheaper than Epic, swingier than Basic, and intentionally not the best value.",
+    price: 1000,
+    cardsPerPack: 6,
     includeCores: false,
     dropTable: [
-      { rarity: "common", weight: 35 },
-      { rarity: "uncommon", weight: 25 },
-      { rarity: "rare", weight: 18 },
-      { rarity: "epic", weight: 12 },
-      { rarity: "legendary", weight: 6 },
-      { rarity: "mythic", weight: 3 },
-      { rarity: "bababooey", weight: 1 }
+      { rarity: "common", weight: 45 },
+      { rarity: "uncommon", weight: 30 },
+      { rarity: "rare", weight: 17 },
+      { rarity: "epic", weight: 6 },
+      { rarity: "legendary", weight: 1.5 },
+      { rarity: "mythic", weight: 0.4 },
+      { rarity: "bababooey", weight: 0.1 }
     ],
     guaranteedSlots: []
   },

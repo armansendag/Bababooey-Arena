@@ -117,6 +117,19 @@
     return state.match?.players.find((player) => player.id !== state.match.activePlayerId);
   }
 
+  function newestActiveMatch(matches = []) {
+    return [...matches]
+      .filter((match) => match?.status === "active")
+      .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0))[0] || null;
+  }
+
+  function shouldRestoreOnlineMatch(match) {
+    if (!match || match.status !== "active") return false;
+    if (!state.onlineMatch || state.onlineMatch.status !== "active") return true;
+    if (state.onlineMatch.id === match.id) return false;
+    return Date.parse(match.createdAt || 0) >= Date.parse(state.onlineMatch.createdAt || 0);
+  }
+
   function viewerPlayer() {
     if (!state.match) return null;
     if (state.battleMode === "online" && state.profile?.userId) {
@@ -145,7 +158,7 @@
     socket.addEventListener("open", () => {
       state.connectionStatus = "connected";
       state.opponentDisconnected = false;
-      if (state.onlineMatch?.id) socket.send(JSON.stringify({ type: "subscribe_match", matchId: state.onlineMatch.id }));
+      if (state.onlineMatch?.id && state.onlineMatch.status === "active") socket.send(JSON.stringify({ type: "subscribe_match", matchId: state.onlineMatch.id }));
       render();
     });
 
@@ -173,6 +186,11 @@
       state.onlineMatches = message.matches || state.onlineMatches;
       state.queueStatus = message.queue || state.queueStatus;
       state.rankedProfile = message.ranked || state.rankedProfile;
+      const active = newestActiveMatch(state.onlineMatches);
+      if (shouldRestoreOnlineMatch(active)) {
+        openOnlineMatch(active);
+        return;
+      }
     }
     if (message.type === "queue_joined" || message.type === "queue_cancelled") {
       state.queueStatus = message.queue || state.queueStatus;
@@ -198,6 +216,10 @@
         state.selected = null;
       }
       if (match.status !== "active" || previous?.activePlayerId !== match.state.activePlayerId) state.selected = null;
+      if (match.status !== "active") {
+        localStorage.removeItem("bababooey_online_match_id");
+        refreshAccountData().catch(() => {});
+      }
     }
     if (message.type === "error") {
       state.message = message.error;
@@ -683,7 +705,8 @@
       showMore.addEventListener("click", (event) => {
         event.stopPropagation();
         state.detailCard = cardData;
-        render();
+        if (options.detailOnly) renderDetailOnly();
+        else render();
       });
     }
     if (options.actions) {
@@ -699,7 +722,8 @@
         return;
       }
       state.detailCard = cardData;
-      render();
+      if (options.detailOnly) renderDetailOnly();
+      else render();
     });
     return node;
   }
@@ -1018,7 +1042,7 @@
       `;
       const row = el("div", "reveal-row pack-results-grid");
       state.packReveal.cards.forEach((result, index) => {
-        const node = renderCard(result.card, { reveal: true });
+        const node = renderCard(result.card, { reveal: true, detailOnly: true });
         node.style.animationDelay = `${650 + index * 420}ms`;
         node.style.setProperty("--reveal-index", index);
         const resultNote = result.added
@@ -1387,16 +1411,6 @@
       ${disabled && reason ? `<div class="disabled-reason">${escapeHtml(reason)}</div>` : ""}
     `;
     if (cooldown) node.appendChild(el("div", "cooldown-badge", `CD ${entry.cooldownRemaining || spellCooldown}`));
-    node.addEventListener("mouseenter", () => {
-      state.detailCard = item;
-      renderDetailOnly();
-    });
-    node.addEventListener("mouseleave", () => {
-      if (state.detailCard?.id === item.id) {
-        state.detailCard = null;
-        renderDetailOnly();
-      }
-    });
     node.addEventListener("dblclick", () => {
       state.detailCard = item;
       render();
@@ -1466,15 +1480,9 @@
         target: { type: "enchantment", instanceId: unit.instanceId }
       }));
     }
-    node.addEventListener("mouseenter", () => {
+    node.addEventListener("dblclick", () => {
       state.detailCard = item;
-      renderDetailOnly();
-    });
-    node.addEventListener("mouseleave", () => {
-      if (state.detailCard?.id === item.id) {
-        state.detailCard = null;
-        renderDetailOnly();
-      }
+      render();
     });
     return node;
   }
@@ -1748,7 +1756,11 @@
           state.onlineMatch = match;
           state.match = match.state;
           state.feedback = buildFeedback(previous, match.state, command);
-          if (match.status === "finished") state.battlePhase = "ended";
+          if (match.status === "finished") {
+            state.battlePhase = "ended";
+            localStorage.removeItem("bababooey_online_match_id");
+            refreshAccountData().catch(() => {});
+          }
           state.selected = null;
           state.message = "";
           render();
@@ -1840,19 +1852,12 @@
       }
       if (!state.token) return renderAuth();
       connectOnlineSocket();
-      const savedMatchId = localStorage.getItem("bababooey_online_match_id");
-      if (savedMatchId) {
-        try {
-          const match = await api(`/online-matches/${savedMatchId}`);
-          if (match.status === "active") {
-            openOnlineMatch(match);
-            return;
-          }
-          localStorage.removeItem("bababooey_online_match_id");
-        } catch {
-          localStorage.removeItem("bababooey_online_match_id");
-        }
+      const active = newestActiveMatch(state.onlineMatches);
+      if (active) {
+        openOnlineMatch(active);
+        return;
       }
+      localStorage.removeItem("bababooey_online_match_id");
       await startMatch({ navigate: false });
       state.view = "home";
       autoFillLoadout();

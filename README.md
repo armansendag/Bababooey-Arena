@@ -13,7 +13,20 @@ New accounts start with:
 
 New accounts do not receive the full card catalog and do not receive every archetype starter deck as owned cards. Collection progress comes from opening packs, earning rewards, and keeping copies over time. Players may own up to 10 copies of each card; only copy 11 and beyond converts to coins.
 
-The launch shop includes Starter Pack, Basic Pack, Rare Pack, Epic Pack, Mythic Pack, Chaos Pack, Archetype Pack, and Core Cache. Starter Packs only roll commons, uncommons, and rare cards.
+The launch shop includes Starter Pack, Basic Pack, Rare Pack, Epic Pack, Mythic Pack, Chaos Pack, Archetype Pack, and Core Cache. Starter Packs only roll commons, uncommons, and rare cards. Chaos Pack is now a high-variance fun pack rather than the best value; Epic and Mythic Packs carry the stronger guaranteed premium slots.
+
+### Current Pack Odds
+
+| Pack | Cost | Cards | Guaranteed slots | Rarity odds |
+| --- | ---: | ---: | --- | --- |
+| Starter Pack | 150 | 6 | 1 uncommon | Common 72 / Uncommon 25 / Rare 3 |
+| Basic Pack | 250 | 6 | 1 uncommon | Common 62 / Uncommon 27 / Rare 8 / Epic 2.5 / Legendary 0.45 / Mythic 0.05 |
+| Rare Pack | 600 | 6 | 1 rare | Common 42 / Uncommon 34 / Rare 18 / Epic 4.8 / Legendary 1 / Mythic 0.2 |
+| Epic Pack | 1400 | 6 | 1 epic | Uncommon 43 / Rare 37 / Epic 16 / Legendary 3 / Mythic 0.8 / Bababooey 0.2 |
+| Mythic Pack | 5000 | 6 | 1 mythic | Rare 44 / Epic 34 / Legendary 16 / Mythic 5 / Bababooey 1 |
+| Chaos Pack | 1000 | 6 | None | Common 45 / Uncommon 30 / Rare 17 / Epic 6 / Legendary 1.5 / Mythic 0.4 / Bababooey 0.1 |
+| Archetype Pack | 450 | 8 | 1 uncommon, 1 rare | Common 46 / Uncommon 32 / Rare 16 / Epic 4.5 / Legendary 1.2 / Mythic 0.28 / Bababooey 0.02 |
+| Core Cache | 700 | 5 | 1 core, 1 rare | Common 35 / Uncommon 30 / Rare 23 / Epic 8 / Legendary 2.5 / Mythic 1 / Bababooey 0.5 |
 
 Quests provide extra coin income. One-time quests give larger early boosts for first match, first win, first pack, ranked tryout, and rare pulls. Daily game quests reward one play and one win each day. Repeatable quests reset after claiming and permanently reward steady play, wins, casual/ranked sessions, pack opening, and rare-plus pulls. Online match completion advances `play_game` for both players and `win_game` for the winner.
 

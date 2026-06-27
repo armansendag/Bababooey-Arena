@@ -290,6 +290,45 @@ test("free starter pack opens before spending coins and adds cards", () => {
   assert.equal(afterCopies, beforeCopies + result.cards.filter((card) => card.added).length);
 });
 
+test("owned cards from persistence are available to loadout validation", () => {
+  const app = createApp();
+  const player = register(app, "owned-loadout@example.com", "Owned Loadout");
+  const owned = app.store.playerCards.get(player.user.id);
+  owned.clear();
+  owned.set("core_starter", 1);
+  owned.set("troop_mana_goblin", 3);
+  owned.set("troop_mana_slime", 3);
+  owned.set("troop_mana_golem", 2);
+  owned.set("spell_emergency_funding", 2);
+  owned.set("enchant_mana_spring", 2);
+
+  const result = app.services.loadouts.validate(player.user.id, {
+    coreCardId: "core_starter",
+    cards: {
+      troop_mana_goblin: 3,
+      troop_mana_slime: 3,
+      troop_mana_golem: 2,
+      spell_emergency_funding: 2,
+      enchant_mana_spring: 2
+    }
+  });
+
+  assert.equal(result.valid, true, result.errors.join(", "));
+  assert.equal(result.errors.some((error) => error.includes("own 0 copies")), false);
+});
+
+test("pack-opened cards immediately appear in collection ownership counts", () => {
+  const app = createApp({ random: () => 0 });
+  const player = register(app, "pack-owned@example.com", "Pack Owned");
+  const result = app.services.packs.open(player.user.id, "starter_pack");
+  const collection = app.services.collection.list(player.user.id);
+
+  for (const pull of result.cards.filter((item) => item.added)) {
+    const owned = collection.find((card) => card.id === pull.card.id);
+    assert.equal(owned.ownedCount >= pull.ownedCount, true, pull.card.id);
+  }
+});
+
 test("duplicate conversion only happens after ten owned copies", () => {
   const app = createApp({ random: () => 0 });
   const player = register(app, "duplicates@example.com", "Duplicates");

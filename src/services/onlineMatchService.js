@@ -207,8 +207,19 @@ function createOnlineMatchService(store, options = {}) {
     });
   }
 
+  function activeMatchesForPlayer(playerId) {
+    for (const match of store.onlineMatches.values()) {
+      if (match.status === "active" && match.playerIds.includes(playerId) && activeTurnTimedOut(match)) {
+        forfeitActiveTurn(match);
+      }
+    }
+    return Array.from(store.onlineMatches.values())
+      .filter((match) => match.status === "active" && match.playerIds.includes(playerId))
+      .sort((a, b) => Date.parse(b.createdAt || 0) - Date.parse(a.createdAt || 0));
+  }
+
   function activeMatchForPlayer(playerId) {
-    return Array.from(store.onlineMatches.values()).find((match) => match.status === "active" && match.playerIds.includes(playerId));
+    return activeMatchesForPlayer(playerId)[0] || null;
   }
 
   function areFriends(a, b) {
@@ -407,13 +418,7 @@ function createOnlineMatchService(store, options = {}) {
   }
 
   function listMatches(userId) {
-    for (const match of store.onlineMatches.values()) {
-      if (match.status === "active" && match.playerIds.includes(userId) && activeTurnTimedOut(match)) {
-        forfeitActiveTurn(match);
-      }
-    }
-    return Array.from(store.onlineMatches.values())
-      .filter((match) => match.status === "active" && match.playerIds.includes(userId))
+    return activeMatchesForPlayer(userId)
       .map((match) => serializeOnlineMatch(store, match));
   }
 
@@ -510,27 +515,27 @@ function createOnlineMatchService(store, options = {}) {
   }
 
   function awardMatch(match) {
-    if (match.rewarded || !["finished", "abandoned"].includes(match.status) || !match.winnerId) return;
+    if (!["finished", "abandoned"].includes(match.status) || !match.winnerId) return;
     if (!match.playerIds.includes(match.winnerId)) {
       const error = new Error("Cannot award match with invalid winner.");
       error.status = 500;
       throw error;
     }
-    if (store.matchHistory.some((entry) => entry.matchId === match.id)) {
+    const hasAllRewards = match.playerIds.every((playerId) => {
+      return store.matchHistory.some((entry) => entry.matchId === match.id && entry.playerId === playerId) &&
+        store.coinTransactions.some((entry) => entry.sourceId === match.id && entry.playerId === playerId && ["match_win_reward", "match_loss_reward"].includes(entry.reason));
+    });
+    if (match.rewarded && hasAllRewards) return;
+    if (hasAllRewards) {
       match.rewarded = true;
       persistStore();
       return;
     }
-    if (store.coinTransactions.some((entry) => entry.sourceId === match.id && ["match_win_reward", "match_loss_reward"].includes(entry.reason))) {
-      match.rewarded = true;
-      persistStore();
-      return;
-    }
-    match.rewarded = true;
     const mode = match.mode || "friend";
     const rewards = MATCH_REWARDS[mode] || MATCH_REWARDS.friend;
     const ratingChanges = {};
-    if (mode === "ranked") {
+    const shouldApplyRatings = mode === "ranked" && !store.matchHistory.some((entry) => entry.matchId === match.id);
+    if (shouldApplyRatings) {
       for (const playerId of match.playerIds) {
         const didWin = playerId === match.winnerId;
         const rating = ensureRating(playerId);
@@ -550,34 +555,44 @@ function createOnlineMatchService(store, options = {}) {
     for (const playerId of match.playerIds) {
       const didWin = playerId === match.winnerId;
       const reward = didWin ? rewards.win : rewards.loss;
-      store.addCoinTransaction({
-        playerId,
-        amount: reward,
-        reason: didWin ? "match_win_reward" : "match_loss_reward",
-        sourceId: match.id,
-        metadata: { matchId: match.id, mode }
-      });
-      store.matchHistory.push({
-        id: makeId(),
-        matchId: match.id,
-        mode,
-        playerId,
-        opponentId: match.playerIds.find((id) => id !== playerId),
-        result: didWin ? "win" : "loss",
-        rewardCoins: reward,
-        ratingBefore: ratingChanges[playerId]?.before ?? null,
-        ratingAfter: ratingChanges[playerId]?.after ?? null,
-        rankTierBefore: ratingChanges[playerId]?.tierBefore ?? null,
-        rankTierAfter: ratingChanges[playerId]?.tierAfter ?? null,
-        createdAt: nowIso()
-      });
-      if (questService) {
+      const hasRewardTransaction = store.coinTransactions.some((entry) => entry.sourceId === match.id && entry.playerId === playerId && ["match_win_reward", "match_loss_reward"].includes(entry.reason));
+      const hasHistory = store.matchHistory.some((entry) => entry.matchId === match.id && entry.playerId === playerId);
+      if (!hasRewardTransaction) {
+        store.addCoinTransaction({
+          playerId,
+          amount: reward,
+          reason: didWin ? "match_win_reward" : "match_loss_reward",
+          sourceId: match.id,
+          metadata: { matchId: match.id, mode }
+        });
+      }
+      if (!hasHistory) {
+        store.matchHistory.push({
+          id: makeId(),
+          matchId: match.id,
+          mode,
+          playerId,
+          opponentId: match.playerIds.find((id) => id !== playerId),
+          result: didWin ? "win" : "loss",
+          rewardCoins: reward,
+          ratingBefore: ratingChanges[playerId]?.before ?? null,
+          ratingAfter: ratingChanges[playerId]?.after ?? null,
+          rankTierBefore: ratingChanges[playerId]?.tierBefore ?? null,
+          rankTierAfter: ratingChanges[playerId]?.tierAfter ?? null,
+          createdAt: nowIso()
+        });
+      }
+      if (questService && !hasHistory) {
         questService.recordProgress(playerId, "play_game", 1);
         if (didWin) questService.recordProgress(playerId, "win_game", 1);
         if (mode === "casual") questService.recordProgress(playerId, "play_casual", 1);
         if (mode === "ranked") questService.recordProgress(playerId, "play_ranked", 1);
       }
     }
+    match.rewarded = match.playerIds.every((playerId) => {
+      return store.matchHistory.some((entry) => entry.matchId === match.id && entry.playerId === playerId) &&
+        store.coinTransactions.some((entry) => entry.sourceId === match.id && entry.playerId === playerId && ["match_win_reward", "match_loss_reward"].includes(entry.reason));
+    });
     persistStore();
   }
 

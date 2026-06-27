@@ -267,6 +267,41 @@ test("reconnect receives latest online match state", async (t) => {
   assert.equal(snapshot.match.connectedPlayerIds.includes(playerA.user.id), true);
 });
 
+test("active match lookup returns the newest active match and skips expired matches", () => {
+  const { app, playerA, playerB } = makeOnlineFixture();
+  const firstChallenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const first = app.services.onlineMatches.acceptChallenge(playerB.user.id, firstChallenge.id);
+  const secondChallenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const second = app.services.onlineMatches.acceptChallenge(playerB.user.id, secondChallenge.id);
+
+  app.store.onlineMatches.get(first.id).createdAt = "2026-01-01T00:00:00.000Z";
+  app.store.onlineMatches.get(second.id).createdAt = "2026-01-02T00:00:00.000Z";
+  app.services.onlineMatches.command(playerA.user.id, first.id, { type: "forfeit" });
+
+  const matches = app.services.onlineMatches.listMatches(playerA.user.id);
+
+  assert.equal(matches[0].id, second.id);
+  assert.equal(matches.some((match) => match.id === first.id), false);
+});
+
+test("connected websocket payload lists newest active match first", async (t) => {
+  const { app, playerA, playerB } = makeOnlineFixture();
+  const { server, wsUrl } = await listen(app);
+  t.after(() => server.close());
+  const firstChallenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const first = app.services.onlineMatches.acceptChallenge(playerB.user.id, firstChallenge.id);
+  const secondChallenge = app.services.onlineMatches.sendChallenge(playerA.user.id, playerB.user.id);
+  const second = app.services.onlineMatches.acceptChallenge(playerB.user.id, secondChallenge.id);
+  app.store.onlineMatches.get(first.id).createdAt = "2026-01-01T00:00:00.000Z";
+  app.store.onlineMatches.get(second.id).createdAt = "2026-01-02T00:00:00.000Z";
+
+  const socket = await openSocket(wsUrl, playerA.token);
+  t.after(() => socket.close());
+  const connected = await waitForMessage(socket, (message) => message.type === "connected");
+
+  assert.equal(connected.matches[0].id, second.id);
+});
+
 test("a full online friend match can finish and records history plus rewards", async (t) => {
   const { app, playerA, playerB } = makeOnlineFixture();
   const { server, baseUrl, wsUrl } = await listen(app);
@@ -673,6 +708,38 @@ test("ranked matches update ratings, tiers, rewards, and avoid duplicate grants"
   app.services.onlineMatches.cleanupInactiveMatches();
   assert.equal(app.store.coinTransactions.filter((tx) => tx.sourceId === finished.id).length, 2);
   assert.equal(app.store.matchHistory.filter((entry) => entry.matchId === finished.id).length, 2);
+});
+
+test("match reward repair grants missing player rewards without duplicating existing payouts", () => {
+  const { app, playerA, playerB } = makeOnlineFixture();
+  app.services.onlineMatches.joinQueue(playerA.user.id, "ranked");
+  const { match } = app.services.onlineMatches.joinQueue(playerB.user.id, "ranked");
+
+  app.store.addCoinTransaction({
+    playerId: playerA.user.id,
+    amount: 150,
+    reason: "match_win_reward",
+    sourceId: match.id,
+    metadata: { matchId: match.id, mode: "ranked" }
+  });
+  app.store.matchHistory.push({
+    id: "partial-history",
+    matchId: match.id,
+    mode: "ranked",
+    playerId: playerA.user.id,
+    opponentId: playerB.user.id,
+    result: "win",
+    rewardCoins: 150,
+    createdAt: new Date().toISOString()
+  });
+
+  app.services.onlineMatches.command(playerB.user.id, match.id, { type: "forfeit" });
+
+  assert.equal(app.store.coinTransactions.filter((tx) => tx.sourceId === match.id && tx.playerId === playerA.user.id).length, 1);
+  assert.equal(app.store.coinTransactions.filter((tx) => tx.sourceId === match.id && tx.playerId === playerB.user.id).length, 1);
+  assert.equal(app.store.matchHistory.filter((entry) => entry.matchId === match.id && entry.playerId === playerA.user.id).length, 1);
+  assert.equal(app.store.matchHistory.filter((entry) => entry.matchId === match.id && entry.playerId === playerB.user.id).length, 1);
+  assert.equal(app.store.profiles.get(playerB.user.id).coins, 1040);
 });
 
 test("leaderboards order ranked rating and casual wins", () => {

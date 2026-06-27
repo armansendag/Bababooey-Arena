@@ -63,8 +63,27 @@ test("online screen ignores abandoned saved matches", () => {
   const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
 
   assert.match(appSource, /state\.battlePhase = match\.status === "active" \? "playing" : "ended"/);
-  assert.match(appSource, /if \(match\.status === "active"\) \{\s*openOnlineMatch\(match\);\s*return;\s*\}/s);
+  assert.match(appSource, /function newestActiveMatch\(matches = \[\]\)/);
+  assert.match(appSource, /function shouldRestoreOnlineMatch\(match\)/);
+  assert.match(appSource, /const active = newestActiveMatch\(state\.onlineMatches\)/);
   assert.match(appSource, /localStorage\.removeItem\("bababooey_online_match_id"\)/);
+});
+
+test("battle card details only open from intentional clicks, not hover", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+  const battleSource = appSource.slice(appSource.indexOf("function miniCardForRoster"), appSource.indexOf("function playerZone"));
+
+  assert.doesNotMatch(battleSource, /addEventListener\("mouseenter"/);
+  assert.doesNotMatch(battleSource, /addEventListener\("mouseleave"/);
+  assert.match(battleSource, /addEventListener\("dblclick"/);
+  assert.match(battleSource, /state\.detailCard = item/);
+});
+
+test("pack result card clicks open details without replaying the reveal view", () => {
+  const appSource = fs.readFileSync(path.join(root, "public", "app.js"), "utf8");
+
+  assert.match(appSource, /renderCard\(result\.card, \{ reveal: true, detailOnly: true \}\)/);
+  assert.match(appSource, /if \(options\.detailOnly\) renderDetailOnly\(\);\s*else render\(\);/);
 });
 
 test("top notifications fade and clear automatically", () => {
@@ -164,7 +183,7 @@ test("loadout card action buttons do not open card details", () => {
   assert.match(appSource, /actions\.addEventListener\("pointerdown", \(event\) => event\.stopPropagation\(\)\)/);
   assert.match(appSource, /actions\.addEventListener\("click", \(event\) => event\.stopPropagation\(\)\)/);
   assert.doesNotMatch(appSource, /node\.addEventListener\("mouseenter", \(\) => \{\s*state\.detailCard = cardData/s);
-  assert.match(appSource, /state\.detailCard = cardData;\s*render\(\);/);
+  assert.match(appSource, /state\.detailCard = cardData;\s*if \(options\.detailOnly\) renderDetailOnly\(\);\s*else render\(\);/);
 });
 
 test("collection and loadout card menus sort by rarity with owned-first toggles", () => {

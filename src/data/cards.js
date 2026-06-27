@@ -544,25 +544,15 @@ function effectText(effect) {
 
 function buildRulesText(card) {
   const details = [];
-  const label = `${card.rarity} ${card.faction || "neutral"} ${card.type}`;
   if (card.type === "core") {
-    details.push(`${label}. Core starts with ${card.hp} HP and loses when HP reaches 0.`);
-  } else if (card.type === "troop") {
-    details.push(`${label}. Costs ${card.manaCost} mana, enters cooldown ${card.cooldown} after defeat, and returns to your roster when cooldown ends.`);
-    details.push(`Stats: ${card.attack} Attack, ${card.defense} Defense, ${card.hp} HP. Damage uses Attack minus Defense, minimum 1. Defense refreshes at the start of the owner's turn; HP only returns through healing.`);
-    details.push((card.perks || []).some((perk) => String(perk).toLowerCase().includes("haste"))
-      ? "Haste: this troop can attack on the turn it is played."
-      : "Cannot attack the turn it is played. Troops can attack enemy troops or enchantments, and can attack the enemy Core only when that opponent has no active troops.");
-  } else if (card.type === "spell") {
-    details.push(`${label}. Costs ${card.manaCost} mana, resolves immediately, then enters cooldown ${card.cooldown}. Spells are reusable after cooldown expires.`);
-  } else if (card.type === "enchantment") {
-    details.push(`${label}. Costs ${card.manaCost} mana and has ${card.hp} HP. You can have up to 3 enchantments active, and this exact enchantment cannot be replayed while already active.`);
-    details.push(`Enemy troops can attack it directly. When destroyed, it enters cooldown ${card.cooldown} and later returns to your roster.`);
+    details.push(`Core starts with ${card.hp} HP.`);
+  }
+  if (card.type === "troop" && (card.perks || []).some((perk) => String(perk).toLowerCase().includes("haste"))) {
+    details.push("Haste: this troop can attack on the turn it is played.");
   }
   const effectDetails = (card.effects || []).map(effectText);
   if (effectDetails.length) details.push(...effectDetails);
   if (!effectDetails.length && card.perks?.length) details.push(`Flavor role: ${card.perks.join(" | ")}.`);
-  details.push(`Copy tag: ${card.copyTag || "standard"}.`);
   return details.join(" ");
 }
 

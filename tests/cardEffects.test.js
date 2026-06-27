@@ -95,6 +95,55 @@ test("stat buffs, mana bank cap, and start-of-turn mana effects apply", () => {
   assert.equal(p(state, "p1").currentMana > beforeTurnMana, true);
 });
 
+test("attack buffs from troops, spells, enchantments, and cores increase combat damage", () => {
+  const alphaState = match({ troop_beast_pouncing_cub: 2, troop_beast_pack_alpha: 1 });
+  passTo(alphaState, "p1", 10);
+  const alphaCub = applyCommand(alphaState, { type: "playTroop", playerId: "p1", cardId: "troop_beast_pouncing_cub" }, { cardCatalog: cardsById });
+  applyCommand(alphaState, { type: "playTroop", playerId: "p1", cardId: "troop_beast_pack_alpha" }, { cardCatalog: cardsById });
+  applyCommand(alphaState, { type: "attack", playerId: "p1", attackerInstanceId: alphaCub.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: cardsById });
+  assert.equal(p(alphaState, "p2").coreHp, 16);
+
+  const spellState = match({ troop_beast_pouncing_cub: 2, spell_pack_howl: 1 });
+  passTo(spellState, "p1", 10);
+  const spellCub = applyCommand(spellState, { type: "playTroop", playerId: "p1", cardId: "troop_beast_pouncing_cub" }, { cardCatalog: cardsById });
+  applyCommand(spellState, { type: "castSpell", playerId: "p1", cardId: "spell_pack_howl" }, { cardCatalog: cardsById });
+  applyCommand(spellState, { type: "attack", playerId: "p1", attackerInstanceId: spellCub.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: cardsById });
+  assert.equal(p(spellState, "p2").coreHp, 16);
+
+  const enchantState = match({ troop_beast_pouncing_cub: 2, enchant_hunting_ground: 1 });
+  passTo(enchantState, "p1", 10);
+  applyCommand(enchantState, { type: "playEnchantment", playerId: "p1", cardId: "enchant_hunting_ground" }, { cardCatalog: cardsById });
+  const enchantCub = applyCommand(enchantState, { type: "playTroop", playerId: "p1", cardId: "troop_beast_pouncing_cub" }, { cardCatalog: cardsById });
+  applyCommand(enchantState, { type: "attack", playerId: "p1", attackerInstanceId: enchantCub.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: cardsById });
+  assert.equal(p(enchantState, "p2").coreHp, 16);
+
+  const coreState = createMatch({
+    player1: { id: "p1", loadout: { coreCardId: "core_aggro", cards: legalCards({ troop_beast_pouncing_cub: 2 }) } },
+    player2: { id: "p2", loadout: { coreCardId: "core_starter", cards: legalCards() } },
+    seed: "core-buff"
+  }, { cardCatalog: cardsById });
+  passTo(coreState, "p1", 10);
+  const coreCub = applyCommand(coreState, { type: "playTroop", playerId: "p1", cardId: "troop_beast_pouncing_cub" }, { cardCatalog: cardsById });
+  applyCommand(coreState, { type: "attack", playerId: "p1", attackerInstanceId: coreCub.instanceId, target: { type: "core", playerId: "p2" } }, { cardCatalog: cardsById });
+  assert.equal(p(coreState, "p2").coreHp, 16);
+});
+
+test("attack buffs increase damage against defended troops", () => {
+  const state = match({ troop_beast_pouncing_cub: 2, spell_pack_howl: 1 }, { troop_machine_tin_drone: 1 });
+  passTo(state, "p1", 10);
+  const cub = applyCommand(state, { type: "playTroop", playerId: "p1", cardId: "troop_beast_pouncing_cub" }, { cardCatalog: cardsById });
+  applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_pack_howl" }, { cardCatalog: cardsById });
+  endTurn(state);
+  passTo(state, "p2", 10);
+  const drone = applyCommand(state, { type: "playTroop", playerId: "p2", cardId: "troop_machine_tin_drone" }, { cardCatalog: cardsById });
+  endTurn(state);
+  passTo(state, "p1", 10);
+
+  const result = applyCommand(state, { type: "attack", playerId: "p1", attackerInstanceId: cub.instanceId, target: { type: "troop", instanceId: drone.instanceId } }, { cardCatalog: cardsById });
+
+  assert.equal(result.damage, 2);
+});
+
 test("cooldown reduction and increase effects modify reusable cards", () => {
   const state = match({ spell_time_skip: 1 }, { spell_minor_inconvenience: 1 });
   passTo(state, "p1", 10);

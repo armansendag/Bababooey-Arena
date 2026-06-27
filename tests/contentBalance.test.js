@@ -3,6 +3,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { cards, cardsById } = require("../src/data/cards");
+const { packs } = require("../src/data/packs");
 const { STARTER_LOADOUTS } = require("../src/data/starterLoadouts");
 const { createMatch, applyCommand } = require("../src/domain/battleEngine");
 const { validateLoadout } = require("../src/domain/loadouts");
@@ -64,4 +65,45 @@ test("starter mirrors do not instantly win or brick in opening turns", () => {
 
     assert.equal(madePlay, 6);
   }
+});
+
+const RARITY_VALUE = {
+  common: 1,
+  uncommon: 2,
+  rare: 5,
+  epic: 14,
+  legendary: 45,
+  mythic: 120,
+  bababooey: 300
+};
+
+function weightedRarityValue(dropTable) {
+  const total = dropTable.reduce((sum, entry) => sum + entry.weight, 0);
+  return dropTable.reduce((sum, entry) => sum + (RARITY_VALUE[entry.rarity] || 0) * (entry.weight / total), 0);
+}
+
+function guaranteedSlotValue(pack, slot) {
+  if (slot.rarity) return RARITY_VALUE[slot.rarity] || 0;
+  return weightedRarityValue(pack.dropTable);
+}
+
+function expectedPackValue(pack) {
+  let value = 0;
+  for (let index = 0; index < pack.cardsPerPack; index += 1) {
+    const guaranteed = (pack.guaranteedSlots || [])[index];
+    value += guaranteed ? guaranteedSlotValue(pack, guaranteed) : weightedRarityValue(pack.dropTable);
+  }
+  return value;
+}
+
+test("pack economy keeps premium packs more rewarding than chaos by expected rarity value", () => {
+  const byId = Object.fromEntries(packs.map((pack) => [pack.id, pack]));
+  const expected = Object.fromEntries(packs.map((pack) => [pack.id, expectedPackValue(pack)]));
+
+  assert.equal(byId.chaos_pack.cardsPerPack, 6);
+  assert.equal(byId.chaos_pack.price < byId.epic_pack.price, true);
+  assert.equal(expected.epic_pack > expected.chaos_pack, true);
+  assert.equal(expected.mythic_pack > expected.epic_pack, true);
+  assert.equal(expected.rare_pack > expected.basic_pack, true);
+  assert.deepEqual(byId.starter_pack.dropTable.map((entry) => entry.rarity), ["common", "uncommon", "rare"]);
 });
