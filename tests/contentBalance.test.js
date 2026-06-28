@@ -107,3 +107,37 @@ test("pack economy keeps premium packs more rewarding than chaos by expected rar
   assert.equal(expected.rare_pack > expected.basic_pack, true);
   assert.deepEqual(byId.starter_pack.dropTable.map((entry) => entry.rarity), ["common", "uncommon", "rare"]);
 });
+
+test("phase balance 2 targeted outliers are tuned without changing core rules", () => {
+  const byId = Object.fromEntries(cards.map((card) => [card.id, card]));
+
+  assert.equal(byId.core_ramp.effects.length, 0);
+  assert.deepEqual(byId.core_beast.effects, [{ trigger: "onAttack", type: "coreAttackBonus", faction: "beast", amount: 1 }]);
+  assert.equal(byId.core_memeborn.effects[0].type, "damage");
+  assert.equal(byId.core_memeborn.effects[0].amount, 1);
+
+  assert.equal(byId.troop_mana_goblin.effects[0].trigger, "death");
+  assert.equal(byId.troop_mana_goblin.attack <= 1, true);
+  assert.equal(byId.spell_mana_conversion.manaCost, 4);
+  assert.equal(byId.spell_forbidden_coupon.manaCost, 2);
+  assert.equal(byId.spell_forbidden_coupon.effects[0].amount, 3);
+  assert.equal(byId.enchant_infinite_generator.manaCost, 4);
+  assert.equal(byId.enchant_infinite_generator.effects[0].amount, 1);
+
+  for (const cardId of [
+    "troop_memeborn_the_big_bababooey",
+    "troop_mana_worldroot_avatar",
+    "troop_undead_the_last_coffin",
+    "troop_arcane_reality_editor",
+    "troop_beast_primal_calamity",
+    "troop_neutral_worldbreaker",
+    "troop_tech_doomsday_prototype",
+    "troop_machine_singularity_engine"
+  ]) {
+    assert.equal(byId[cardId].manaCost, 6, `${cardId} should be moved into reachable finisher range`);
+    assert.equal(byId[cardId].attack + byId[cardId].defense + byId[cardId].hp >= 45, true, `${cardId} should have finisher stats`);
+    assert.equal(byId[cardId].effects.length > 0, true, `${cardId} should have a payoff effect`);
+  }
+  assert.equal(byId.spell_sit.effects[0].amount, 20);
+  assert.equal(byId.spell_sit.cooldown, 4);
+});

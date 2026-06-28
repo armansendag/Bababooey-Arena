@@ -15,6 +15,7 @@ const { cards } = require("../src/data/cards");
 
 test("balance audit stat score follows the requested formula", () => {
   assert.equal(statScore({ attack: 5, defense: 2, hp: 8 }), 14);
+  assert.equal(statScore({ type: "core", hp: 20 }), 0);
 });
 
 test("balance audit target ranges match mana cost bands", () => {
@@ -34,10 +35,29 @@ test("balance audit status flags normal, broken, and useless cards", () => {
 
 test("balance audit effect value estimates major effect categories", () => {
   assert.equal(effectValue({ trigger: "spell", type: "damage", amount: 2 }) >= 5, true);
+  assert.equal(effectValue({ trigger: "spell", type: "damage", target: "enemyCore", amount: 20 }), 90);
   assert.equal(effectValue({ trigger: "startTurn", type: "manaGain", amount: 2 }) >= 20, true);
   assert.equal(effectValue({ trigger: "spell", type: "spellCounter", amount: 1 }) >= 20, true);
   assert.equal(effectValue({ trigger: "spell", type: "destroyEnchantment", amount: 1 }) >= 10, true);
   assert.equal(effectValue({ trigger: "static", type: "coreDamageReduction", amount: 5 }) >= 30, true);
+});
+
+test("core cards use smaller identity scoring instead of playable-card stat scoring", () => {
+  const coreAudit = auditCard({
+    id: "core_test",
+    name: "Core Test",
+    type: "core",
+    faction: "neutral",
+    rarity: "common",
+    manaCost: 0,
+    cooldown: 0,
+    hp: 20,
+    effects: [{ trigger: "onAttack", type: "coreAttackBonus", faction: "beast", amount: 1 }]
+  });
+
+  assert.equal(coreAudit.statScore, 0);
+  assert.deepEqual({ low: coreAudit.targetLow, high: coreAudit.targetHigh }, { low: 0, high: 12 });
+  assert.equal(coreAudit.status, "balanced");
 });
 
 test("balance audit scans every card and emits recommendations", () => {

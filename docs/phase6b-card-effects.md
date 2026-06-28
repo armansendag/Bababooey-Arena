@@ -53,7 +53,7 @@ Implemented in `src/domain/battleEngine.js`:
 | Healing | Repair Loop, Haunted Cathedral, Mech Paladin |
 | Stat buffs | Pack Alpha, Pack Howl, Primal Roar, Overclock |
 | Mana gain | Coin, Emergency Funding, Mana Goblin, Crystal Mine, Supply Drop |
-| Mana bank cap increase | Mana Spring, Worldroot Core |
+| Mana bank cap increase | Mana Spring |
 | Cooldown changes | Time Skip, Grave Call, Disrupt, Minor Inconvenience |
 | Spell countering | Nope, Magic Barrier |
 | Spell reflection | Reflect |

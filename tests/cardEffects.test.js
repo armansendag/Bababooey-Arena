@@ -59,7 +59,7 @@ test("spell damage, healing, true damage, and mana gain resolve from generic eff
 
   p(state, "p2").coreHp = 300;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_sit" }, { cardCatalog: cardsById });
-  assert.equal(p(state, "p2").coreHp, 200);
+  assert.equal(p(state, "p2").coreHp, 280);
 
   p(state, "p1").coreHp = 10;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_repair_loop" }, { cardCatalog: cardsById });
@@ -67,7 +67,7 @@ test("spell damage, healing, true damage, and mana gain resolve from generic eff
 
   p(state, "p1").currentMana = 10;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_orbital_ping" }, { cardCatalog: cardsById });
-  assert.equal(p(state, "p2").coreHp, 196);
+  assert.equal(p(state, "p2").coreHp, 276);
 
   p(state, "p1").currentMana = 10;
   p(state, "p1").coreHp = 20;
@@ -149,10 +149,10 @@ test("cooldown reduction and increase effects modify reusable cards", () => {
   passTo(state, "p1", 10);
   p(state, "p2").coreHp = 300;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_sit" }, { cardCatalog: cardsById });
-  assert.equal(p(state, "p1").spellCooldowns.spell_sit, 3);
+  assert.equal(p(state, "p1").spellCooldowns.spell_sit, 4);
   p(state, "p1").currentMana = 10;
   applyCommand(state, { type: "castSpell", playerId: "p1", cardId: "spell_time_skip" }, { cardCatalog: cardsById });
-  assert.equal(p(state, "p1").spellCooldowns.spell_sit, 1);
+  assert.equal(p(state, "p1").spellCooldowns.spell_sit, 2);
 
   endTurn(state);
   passTo(state, "p2", 10);
@@ -179,7 +179,7 @@ test("spell countering and reflection consume pending defenses", () => {
   p(state, "p2").spellCooldowns = {};
   const reflected = applyCommand(state, { type: "castSpell", playerId: "p2", cardId: "spell_sit" }, { cardCatalog: cardsById });
   assert.equal(reflected.reflected, true);
-  assert.equal(p(state, "p2").coreHp, 200);
+  assert.equal(p(state, "p2").coreHp, 280);
 });
 
 test("enchantment damage, destruction, and core damage reduction apply", () => {

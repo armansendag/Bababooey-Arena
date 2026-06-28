@@ -67,11 +67,11 @@ const troopThemes = {
     ["Relic Warden", { perks: ["Protects fragile boards"] }],
     ["Colossus Handler", { perks: ["Large neutral body"] }],
     ["Ancient Sentinel", { perks: ["Late-game stabilizer"] }],
-    ["Worldbreaker", { rarity: "mythic", perks: ["Neutral mythic finisher"] }]
+    ["Worldbreaker", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 18, defense: 8, hp: 28, perks: ["Neutral mythic finisher"] }]
   ],
   mana: [
-    ["Mana Goblin", { id: "troop_mana_goblin", manaCost: 1, cooldown: 2, attack: 2, defense: 1, hp: 3, rarity: "common", copyTag: "standard", perks: ["Future hook: gain +1 mana next turn"] }],
-    ["Mana Slime", { id: "troop_mana_slime", manaCost: 2, cooldown: 2, attack: 2, defense: 2, hp: 4, rarity: "common", copyTag: "standard", perks: ["Future hook: when destroyed, gain +1 mana"] }],
+    ["Mana Goblin", { id: "troop_mana_goblin", manaCost: 1, cooldown: 3, attack: 1, defense: 0, hp: 2, rarity: "common", copyTag: "standard", perks: ["Weak ramp body: when destroyed, gain +1 temporary mana"] }],
+    ["Mana Slime", { id: "troop_mana_slime", manaCost: 2, cooldown: 3, attack: 1, defense: 1, hp: 3, rarity: "common", copyTag: "standard", perks: ["Weak ramp body: when destroyed, gain +1 mana"] }],
     ["Sprout Channeler", { perks: ["Ramp curve support"] }],
     ["Lotus Adept", { perks: ["Mana faction support"] }],
     ["Mana Golem", { id: "troop_mana_golem", manaCost: 5, cooldown: 3, attack: 4, defense: 4, hp: 9, rarity: "rare", copyTag: "limited", perks: ["Gain +1 mana each turn"] }],
@@ -79,7 +79,7 @@ const troopThemes = {
     ["Leyline Giant", { perks: ["Big mana bridge"] }],
     ["Overgrowth Titan", { perks: ["Ramp finisher"] }],
     ["Mana Dragon", { id: "troop_mana_dragon", manaCost: 8, cooldown: 5, attack: 8, defense: 6, hp: 14, rarity: "legendary", copyTag: "unique", perks: ["Gain +2 mana each turn"] }],
-    ["Worldroot Avatar", { rarity: "mythic", perks: ["Mana mythic finisher"] }]
+    ["Worldroot Avatar", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 14, defense: 8, hp: 28, perks: ["Mana mythic finisher"] }]
   ],
   arcane: [
     ["Rune Apprentice", { perks: ["Cheap arcane body"] }],
@@ -91,7 +91,7 @@ const troopThemes = {
     ["Astral Binder", { perks: ["Late arcane stabilizer"] }],
     ["Chrono Oracle", { perks: ["Control finisher body"] }],
     ["Prism Archon", { rarity: "legendary", perks: ["Arcane legendary finisher"] }],
-    ["Reality Editor", { rarity: "mythic", perks: ["Arcane mythic finisher"] }]
+    ["Reality Editor", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 14, defense: 7, hp: 26, perks: ["Arcane mythic finisher"] }]
   ],
   tech: [
     ["Socket Runner", { perks: ["Fast tech opener", "Haste"] }],
@@ -103,7 +103,7 @@ const troopThemes = {
     ["Siege Mechanic", { perks: ["Structure pressure"] }],
     ["Turbo Exo-Suit", { perks: ["Heavy tech body"] }],
     ["Orbital Engineer", { rarity: "legendary", perks: ["Tech legendary payoff"] }],
-    ["Doomsday Prototype", { rarity: "mythic", perks: ["Tech mythic finisher"] }]
+    ["Doomsday Prototype", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 17, defense: 7, hp: 27, perks: ["Tech mythic finisher"] }]
   ],
   beast: [
     ["Pouncing Cub", { attack: 3, defense: 0, hp: 2, perks: ["Aggressive beast opener", "Haste"] }],
@@ -115,7 +115,7 @@ const troopThemes = {
     ["Skyclaw Roc", { perks: ["Evasive beast flavor"] }],
     ["Elder Mammoth", { perks: ["Large beast body"] }],
     ["Apex Chimera", { rarity: "legendary", perks: ["Beast legendary finisher"] }],
-    ["Primal Calamity", { rarity: "mythic", perks: ["Beast mythic finisher"] }]
+    ["Primal Calamity", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 20, defense: 4, hp: 26, perks: ["Beast mythic finisher"] }]
   ],
   machine: [
     ["Tin Drone", { defense: 2, perks: ["Machine blocker"] }],
@@ -127,7 +127,7 @@ const troopThemes = {
     ["Mech Paladin", { perks: ["High defense machine"] }],
     ["Titan Loader", { perks: ["Large machine body"] }],
     ["Clockwork Dragon", { rarity: "legendary", perks: ["Machine legendary finisher"] }],
-    ["Singularity Engine", { rarity: "mythic", perks: ["Machine mythic finisher"] }]
+    ["Singularity Engine", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 15, defense: 10, hp: 30, perks: ["Machine mythic finisher"] }]
   ],
   undead: [
     ["Bone Skitter", { perks: ["Undead opener"] }],
@@ -139,7 +139,7 @@ const troopThemes = {
     ["Lich Acolyte", { perks: ["Control undead body"] }],
     ["Grave Titan", { perks: ["Large undead body"] }],
     ["Dread Lich", { rarity: "legendary", perks: ["Undead legendary finisher"] }],
-    ["The Last Coffin", { rarity: "mythic", perks: ["Undead mythic finisher"] }]
+    ["The Last Coffin", { rarity: "mythic", manaCost: 6, cooldown: 5, attack: 15, defense: 7, hp: 29, perks: ["Undead mythic finisher"] }]
   ],
   memeborn: [
     ["Tiny Goofball", { perks: ["Memeborn opener", "Haste"] }],
@@ -151,7 +151,7 @@ const troopThemes = {
     ["Chaos Accountant", { perks: ["Strange but sturdy"] }],
     ["Monday Monster", { perks: ["Late meme pressure"] }],
     ["Bababooey Herald", { rarity: "legendary", perks: ["Memeborn legendary finisher"] }],
-    ["The Big Bababooey", { rarity: "bababooey", manaCost: 9, cooldown: 6, attack: 10, defense: 4, hp: 18, perks: ["Bababooey rarity finisher"] }]
+    ["The Big Bababooey", { rarity: "bababooey", manaCost: 6, cooldown: 5, attack: 19, defense: 6, hp: 30, perks: ["Bababooey rarity finisher"] }]
   ]
 };
 
@@ -160,8 +160,8 @@ const troopCards = Object.entries(troopThemes).flatMap(([faction, entries]) => {
 });
 
 const spellCards = [
-  ["spell_sit", "Sit", "neutral", "rare", 7, 3, "limited", ["Deal 100 damage"]],
-  ["spell_mana_conversion", "Mana Conversion", "mana", "uncommon", 2, 2, "standard", ["Destroy a troop and gain its mana cost"]],
+  ["spell_sit", "Sit", "neutral", "rare", 7, 4, "limited", ["Deal 20 damage"]],
+  ["spell_mana_conversion", "Mana Conversion", "mana", "uncommon", 4, 4, "standard", ["Destroy a troop and gain its mana cost"]],
   ["spell_emergency_funding", "Emergency Funding", "mana", "common", 0, 2, "standard", ["Gain +3 temporary mana and deal 5 damage to your Core"]],
   ["spell_disenchant", "Disenchant", "arcane", "common", 2, 2, "standard", ["Destroy an enchantment"]],
   ["spell_nope", "Nope", "arcane", "epic", 3, 4, "limited", ["Counter a spell"]],
@@ -184,7 +184,7 @@ const spellCards = [
   ["spell_supply_drop", "Supply Drop", "tech", "common", 2, 2, "standard", ["Tech resource hook"]],
   ["spell_scrap_blast", "Scrap Blast", "tech", "uncommon", 3, 3, "standard", ["Tech damage hook"]],
   ["spell_orbital_ping", "Orbital Ping", "tech", "rare", 4, 3, "limited", ["Tech reach hook"]],
-  ["spell_forbidden_coupon", "Forbidden Coupon", "memeborn", "bababooey", 0, 6, "unique", ["Extremely suspicious discount hook"]]
+  ["spell_forbidden_coupon", "Forbidden Coupon", "memeborn", "bababooey", 2, 8, "unique", ["Gain +3 temporary mana"]]
 ].map(([id, name, faction, rarity, manaCost, cooldown, copyTag, perks]) => ({
   id,
   name,
@@ -198,11 +198,11 @@ const spellCards = [
 }));
 
 const enchantmentCards = [
-  ["enchant_mana_spring", "Mana Spring", "mana", "common", 2, 2, "standard", 8, ["+1 mana bank cap while active"]],
+  ["enchant_mana_spring", "Mana Spring", "mana", "common", 3, 3, "standard", 7, ["+1 mana bank cap while active"]],
   ["enchant_crystal_mine", "Crystal Mine", "mana", "uncommon", 3, 2, "standard", 9, ["Gain +1 mana each turn"]],
   ["enchant_arcane_reservoir", "Arcane Reservoir", "arcane", "rare", 3, 3, "limited", 10, ["First spell costs 1 less"]],
   ["enchant_mystic_well", "Mystic Well", "mana", "rare", 4, 3, "limited", 11, ["Gain mana when casting spells"]],
-  ["enchant_infinite_generator", "Infinite Generator", "mana", "mythic", 8, 6, "unique", 15, ["Gain +2 mana each turn"]],
+  ["enchant_infinite_generator", "Infinite Generator", "mana", "mythic", 4, 5, "unique", 15, ["Gain +1 mana each turn"]],
   ["enchant_arcane_shield", "Arcane Shield", "arcane", "rare", 4, 3, "limited", 12, ["Enchantments take 50% reduced damage"]],
   ["enchant_fortress_wall", "Fortress Wall", "neutral", "epic", 5, 4, "limited", 16, ["Core damage reduction"]],
   ["enchant_magic_barrier", "Magic Barrier", "arcane", "epic", 5, 4, "limited", 10, ["Cancel first enemy spell each turn"]],
@@ -254,7 +254,7 @@ const coreCards = [
 }));
 
 const cardEffects = {
-  troop_mana_goblin: [{ trigger: "startTurn", type: "manaGain", amount: 1, temporary: true, ownerOnly: true }],
+  troop_mana_goblin: [{ trigger: "death", type: "manaGain", amount: 1, temporary: true }],
   troop_mana_slime: [{ trigger: "death", type: "manaGain", amount: 1, temporary: true }],
   troop_mana_golem: [{ trigger: "startTurn", type: "manaGain", amount: 1, temporary: true, ownerOnly: true }],
   troop_mana_dragon: [{ trigger: "startTurn", type: "manaGain", amount: 2, temporary: true, ownerOnly: true }],
@@ -265,15 +265,23 @@ const cardEffects = {
   troop_neutral_relic_warden: [{ trigger: "static", type: "enchantmentDamageReduction", amount: 1 }],
   troop_beast_pack_alpha: [{ trigger: "onPlay", type: "statBuff", selector: "friendlyFaction", faction: "beast", attack: 1 }],
   troop_beast_thunder_rhino: [{ trigger: "onAttack", type: "trampleCoreDamage", amount: 1 }],
+  troop_neutral_worldbreaker: [{ trigger: "onAttack", type: "trampleCoreDamage", amount: 4 }],
+  troop_mana_worldroot_avatar: [{ trigger: "startTurn", type: "manaGain", amount: 1, temporary: true, ownerOnly: true }],
+  troop_arcane_reality_editor: [{ trigger: "onPlay", type: "spellCounter", amount: 1 }],
+  troop_tech_doomsday_prototype: [{ trigger: "onPlay", type: "damageAllEnemies", amount: 4 }],
+  troop_beast_primal_calamity: [{ trigger: "onAttack", type: "trampleCoreDamage", amount: 5 }],
   troop_machine_cog_guardian: [{ trigger: "static", type: "coreDamageReduction", amount: 1 }],
   troop_machine_iron_harvester: [{ trigger: "onAttack", type: "lifesteal", amount: 2 }],
   troop_machine_mech_paladin: [{ trigger: "onPlay", type: "healCore", amount: 4 }],
+  troop_machine_singularity_engine: [{ trigger: "static", type: "coreDamageReduction", amount: 2 }],
   troop_undead_grave_nibbler: [{ trigger: "death", type: "healCore", amount: 2 }],
   troop_undead_wraith_duelist: [{ trigger: "onAttack", type: "lifesteal", amount: 2 }],
+  troop_undead_the_last_coffin: [{ trigger: "death", type: "damageAllEnemies", amount: 4 }],
   troop_memeborn_oops_knight: [{ trigger: "onPlay", type: "trueDamageSelfCore", amount: 2 }],
   troop_memeborn_chair_champion: [{ trigger: "onAttack", type: "cooldownIncrease", target: "opponentSpells", amount: 1 }],
+  troop_memeborn_the_big_bababooey: [{ trigger: "onPlay", type: "damageAllEnemies", amount: 4 }],
 
-  spell_sit: [{ trigger: "spell", type: "damage", target: "enemyCore", amount: 100 }],
+  spell_sit: [{ trigger: "spell", type: "damage", target: "enemyCore", amount: 20 }],
   spell_mana_conversion: [
     { trigger: "spell", type: "destroyTroop", target: "targetTroop" },
     { trigger: "spell", type: "manaGainFromDestroyedCost", temporary: true }
@@ -303,13 +311,13 @@ const cardEffects = {
   spell_supply_drop: [{ trigger: "spell", type: "manaGain", amount: 1, temporary: true }],
   spell_scrap_blast: [{ trigger: "spell", type: "damage", target: "targetOrEnemyCore", amount: 3 }],
   spell_orbital_ping: [{ trigger: "spell", type: "trueDamage", target: "enemyCore", amount: 4 }],
-  spell_forbidden_coupon: [{ trigger: "spell", type: "manaGain", amount: 6, temporary: true }],
+  spell_forbidden_coupon: [{ trigger: "spell", type: "manaGain", amount: 3, temporary: true }],
 
   enchant_mana_spring: [{ trigger: "static", type: "maxManaIncrease", amount: 1 }],
   enchant_crystal_mine: [{ trigger: "startTurn", type: "manaGain", amount: 1, temporary: true, ownerOnly: true }],
   enchant_arcane_reservoir: [{ trigger: "static", type: "firstSpellDiscount", amount: 1 }],
   enchant_mystic_well: [{ trigger: "onSpellCast", type: "manaGain", amount: 1, temporary: true }],
-  enchant_infinite_generator: [{ trigger: "startTurn", type: "manaGain", amount: 2, temporary: true, ownerOnly: true }],
+  enchant_infinite_generator: [{ trigger: "startTurn", type: "manaGain", amount: 1, temporary: true, ownerOnly: true }],
   enchant_arcane_shield: [{ trigger: "static", type: "enchantmentDamageMultiplier", multiplier: 0.5 }],
   enchant_fortress_wall: [{ trigger: "static", type: "coreDamageReduction", amount: 5 }],
   enchant_magic_barrier: [{ trigger: "static", type: "spellCounterFirstEachTurn", amount: 1 }],
@@ -327,12 +335,12 @@ const cardEffects = {
   enchant_orbital_array: [{ trigger: "startTurn", type: "damage", target: "enemyCore", amount: 2, ownerOnly: true }],
 
   core_aggro: [{ trigger: "onAttack", type: "coreAttackBonus", faction: "beast", amount: 1 }],
-  core_ramp: [{ trigger: "static", type: "maxManaIncrease", amount: 1 }],
+  core_ramp: [],
   core_control: [{ trigger: "static", type: "coreDamageReduction", amount: 1 }],
-  core_beast: [{ trigger: "onPlayTroop", type: "statBuff", selector: "playedFaction", faction: "beast", attack: 1 }],
+  core_beast: [{ trigger: "onAttack", type: "coreAttackBonus", faction: "beast", amount: 1 }],
   core_machine: [{ trigger: "onPlayTroop", type: "statBuff", selector: "playedFaction", faction: "machine", defense: 1 }],
   core_undead: [{ trigger: "death", type: "healCore", amount: 1 }],
-  core_memeborn: [{ trigger: "onSpellCast", type: "manaGainForFaction", faction: "memeborn", amount: 1, temporary: true }]
+  core_memeborn: [{ trigger: "onSpellCast", type: "damage", target: "enemyCore", amount: 1 }]
 };
 
 const memeCardNames = {

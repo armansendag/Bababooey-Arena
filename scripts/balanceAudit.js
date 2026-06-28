@@ -7,6 +7,35 @@ const { packs } = require("../src/data/packs");
 const { STARTER_LOADOUTS } = require("../src/data/starterLoadouts");
 
 const REPORT_PATH = path.join(__dirname, "..", "docs", "balance-audit.md");
+const BALANCE_PATCH_NOTES = {
+  nerfed: [
+    "Big Snack Core: removed passive mana-bank cap bonus so the ramp core is identity only.",
+    "No Fun Allowed Core: now scored as a core identity effect instead of a playable card body.",
+    "Bonk Alarm Core: now scored as a core identity effect instead of a playable card body.",
+    "Bababooey Core Deluxe: changed from repeatable spell mana to small spell-triggered Core pressure.",
+    "Bark Mode Core: changed from permanent Beast attack buffs to small Beast Core-attack identity.",
+    "Leaky Mana Faucet: increased cost/cooldown and lowered HP.",
+    "Forbidden Coupon: changed from +6 temporary mana at 0 cost to +3 temporary mana at 2 cost with longer cooldown.",
+    "Sell This Creature: increased cost/cooldown so troop destruction plus mana refund is not an early swing.",
+    "Forever Battery: changed from +2 repeatable mana to +1 and reduced cost to make it slower but playable.",
+    "Sit Down Button: reduced direct Core damage from 100 to 20 and increased cooldown."
+  ],
+  buffed: [
+    "The Big Bababooey: reduced cost and improved finisher body with an on-play enemy-board hit.",
+    "Big Tree Receipt: reduced cost, improved body, and added late-game mana drip.",
+    "Final Nap Box: reduced cost, improved body, and added a death-trigger enemy-board hit.",
+    "Photoshop Wizard: reduced cost, improved body, and adds a spell counter when played.",
+    "Absolute Unit Event: reduced cost, improved body, and gained trample Core pressure.",
+    "The Debt Collector: reduced cost, improved body, and gained trample Core pressure.",
+    "Oops Button 9000: reduced cost, improved body, and gained on-play enemy-board damage.",
+    "Forbidden Blender: reduced cost, improved body, and gained Core damage reduction while active."
+  ],
+  why: [
+    "Cores are always active, so their audit score now excludes Core HP and uses a smaller identity-effect target.",
+    "Repeatable mana was narrowed because banked mana makes even +1 per turn scale strongly over a match.",
+    "High-cost finishers received cost/stat/effect buffs so saving mana has a visible payoff."
+  ]
+};
 
 function round(value) {
   return Math.round(value * 10) / 10;
@@ -39,12 +68,12 @@ function magnitudeValue(amount = 1, small = [5, 10], medium = [10, 20], large = 
 
 function triggerMultiplier(effect) {
   if (effect.trigger === "startTurn") return 2.1;
-  if (["static", "onPlayTroop", "onSpellCast", "death"].includes(effect.trigger)) return 1.5;
+  if (["static", "onPlayTroop", "onSpellCast"].includes(effect.trigger)) return 1.5;
   if (effect.trigger === "onAttack") return 1.25;
   return 1;
 }
 
-function effectValue(effect) {
+function effectValue(effect, context = {}) {
   const amount = Math.abs(Number(effect.amount ?? effect.attack ?? effect.defense ?? effect.hp ?? 1));
   let base;
   switch (effect.type) {
@@ -56,7 +85,11 @@ function effectValue(effect) {
     case "damageAllEnemies":
     case "trampleCoreDamage":
     case "enchantmentDamageBonus":
-      base = magnitudeValue(amount);
+      if (effect.target === "enemyCore" || effect.type === "trampleCoreDamage") {
+        base = Math.min(120, Math.max(8, amount * 4.5));
+      } else {
+        base = magnitudeValue(amount);
+      }
       if (effect.type === "trueDamage") base += 4;
       if (effect.type === "damageAllTroops" || effect.type === "damageAllEnemies") base += 8;
       break;
@@ -114,15 +147,17 @@ function effectValue(effect) {
       base = 8;
       break;
   }
-  return round(base * triggerMultiplier(effect));
+  const coreMultiplier = context.card?.type === "core" ? 0.45 : 1;
+  return round(base * triggerMultiplier(effect) * coreMultiplier);
 }
 
 function statScore(card) {
+  if (card.type === "core") return 0;
   return round(((card.attack || 0) * 1.4) + ((card.defense || 0) * 1.1) + ((card.hp || 0) * 0.6));
 }
 
 function effectScore(card) {
-  return round((card.effects || []).reduce((sum, effect) => sum + effectValue(effect), 0));
+  return round((card.effects || []).reduce((sum, effect) => sum + effectValue(effect, { card }), 0));
 }
 
 function statusFor(total, range) {
@@ -178,7 +213,7 @@ function auditCard(card) {
   const stats = statScore(card);
   const effects = effectScore(card);
   const total = round(stats + effects);
-  const range = targetPowerRange(card.manaCost);
+  const range = card.type === "core" ? { low: 0, high: 12 } : targetPowerRange(card.manaCost);
   const audit = {
     id: card.id,
     name: card.name,
@@ -271,6 +306,28 @@ function generateReport(audits = auditCards()) {
     overpowered.length ? markdownTable(overpowered) : "No overpowered cards found.",
     "",
     "## Top 10 Underpowered",
+    "",
+    underpowered.length ? markdownTable(underpowered) : "No underpowered cards found.",
+    "",
+    "## Phase Balance 2 Before/After",
+    "",
+    "### Cards Nerfed",
+    "",
+    BALANCE_PATCH_NOTES.nerfed.map((item) => `- ${item}`).join("\n"),
+    "",
+    "### Cards Buffed",
+    "",
+    BALANCE_PATCH_NOTES.buffed.map((item) => `- ${item}`).join("\n"),
+    "",
+    "### Why These Changes Were Made",
+    "",
+    BALANCE_PATCH_NOTES.why.map((item) => `- ${item}`).join("\n"),
+    "",
+    "### New Top 10 Overpowered",
+    "",
+    overpowered.length ? markdownTable(overpowered) : "No overpowered cards found.",
+    "",
+    "### New Top 10 Underpowered",
     "",
     underpowered.length ? markdownTable(underpowered) : "No underpowered cards found.",
     "",

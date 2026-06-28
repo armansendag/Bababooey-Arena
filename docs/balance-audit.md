@@ -9,86 +9,114 @@ Effect values are estimates. This audit is a triage tool, not an automatic balan
 ## Summary
 
 - Cards audited: 133
-- Balanced: 16
-- Underpowered: 39
-- Overpowered: 6
-- Especially broken: 8
-- Useless: 64
+- Balanced: 38
+- Underpowered: 40
+- Overpowered: 1
+- Especially broken: 1
+- Useless: 53
 
 ## Top 10 Overpowered
 
 | Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
 | --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| Big Snack Core | 0 | core | mana | uncommon | 12 | 31.5 | 43.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
-| Sell This Creature | 2 | spell | mana | uncommon | 0 | 50 | 50 | 18-28 | especially broken | increase mana cost; reduce effect value; increase cooldown |
-| No Fun Allowed Core | 0 | core | arcane | rare | 12 | 28.5 | 40.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
-| Quandale Dingle | 1 | troop | mana | common | 5.7 | 31.5 | 37.2 | 10-18 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| Bonk Alarm Core | 0 | core | beast | uncommon | 12 | 25 | 37 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
-| Bababooey Core Deluxe | 0 | core | memeborn | bababooey | 12 | 22.5 | 34.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
 | Cog Blocker Deluxe | 2 | troop | machine | uncommon | 12 | 28.5 | 40.5 | 18-28 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| Forbidden Coupon | 0 | spell | memeborn | bababooey | 0 | 30 | 30 | 0-20 | especially broken | increase mana cost; reduce effect value; increase cooldown |
-| Leaky Mana Faucet | 2 | enchantment | mana | common | 4.8 | 31.5 | 36.3 | 18-28 | overpowered | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| Bark Mode Core | 0 | core | beast | rare | 12 | 10.5 | 22.5 | 0-20 | overpowered | increase mana cost; lower HP |
+| No Fun Allowed Core | 0 | core | arcane | rare | 0 | 12.8 | 12.8 | 0-12 | overpowered | increase mana cost; lower HP; reduce effect value |
 
 ## Top 10 Underpowered
 
 | Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
 | --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| The Big Bababooey | 9 | troop | memeborn | bababooey | 29.2 | 0 | 29.2 | 135-160 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Big Tree Receipt | 8 | troop | mana | mythic | 25 | 0 | 25 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Final Nap Box | 8 | troop | undead | mythic | 26.4 | 0 | 26.4 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Photoshop Wizard | 8 | troop | arcane | mythic | 26.4 | 0 | 26.4 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Absolute Unit Event | 8 | troop | beast | mythic | 28.1 | 0 | 28.1 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| The Debt Collector | 8 | troop | neutral | mythic | 28.1 | 0 | 28.1 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Oops Button 9000 | 8 | troop | tech | mythic | 29.5 | 0 | 29.5 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Forbidden Blender | 8 | troop | machine | mythic | 29.8 | 0 | 29.8 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Forever Battery | 8 | enchantment | mana | mythic | 9 | 42 | 51 | 110-135 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Sit Down Button | 7 | spell | neutral | rare | 0 | 35 | 35 | 90-110 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Skip The Cutscene | 6 | spell | arcane | legendary | 0 | 20 | 20 | 70-90 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Bababooey Echo Chamber | 6 | enchantment | memeborn | legendary | 7.8 | 13.5 | 21.3 | 70-90 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Professor Stinky | 6 | troop | undead | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Rainbow Principal | 6 | troop | arcane | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Bababooey Herald | 6 | troop | memeborn | legendary | 24.3 | 0 | 24.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Grandpa Statue | 6 | troop | neutral | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Three Guys In A Coat | 6 | troop | beast | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Satellite Nephew | 6 | troop | tech | legendary | 26 | 0 | 26 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Wind-Up Lizard | 6 | troop | machine | legendary | 26.3 | 0 | 26.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Tax Refund Dragon | 8 | troop | mana | legendary | 26.2 | 42 | 68.2 | 110-135 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+
+## Phase Balance 2 Before/After
+
+### Cards Nerfed
+
+- Big Snack Core: removed passive mana-bank cap bonus so the ramp core is identity only.
+- No Fun Allowed Core: now scored as a core identity effect instead of a playable card body.
+- Bonk Alarm Core: now scored as a core identity effect instead of a playable card body.
+- Bababooey Core Deluxe: changed from repeatable spell mana to small spell-triggered Core pressure.
+- Bark Mode Core: changed from permanent Beast attack buffs to small Beast Core-attack identity.
+- Leaky Mana Faucet: increased cost/cooldown and lowered HP.
+- Forbidden Coupon: changed from +6 temporary mana at 0 cost to +3 temporary mana at 2 cost with longer cooldown.
+- Sell This Creature: increased cost/cooldown so troop destruction plus mana refund is not an early swing.
+- Forever Battery: changed from +2 repeatable mana to +1 and reduced cost to make it slower but playable.
+- Sit Down Button: reduced direct Core damage from 100 to 20 and increased cooldown.
+
+### Cards Buffed
+
+- The Big Bababooey: reduced cost and improved finisher body with an on-play enemy-board hit.
+- Big Tree Receipt: reduced cost, improved body, and added late-game mana drip.
+- Final Nap Box: reduced cost, improved body, and added a death-trigger enemy-board hit.
+- Photoshop Wizard: reduced cost, improved body, and adds a spell counter when played.
+- Absolute Unit Event: reduced cost, improved body, and gained trample Core pressure.
+- The Debt Collector: reduced cost, improved body, and gained trample Core pressure.
+- Oops Button 9000: reduced cost, improved body, and gained on-play enemy-board damage.
+- Forbidden Blender: reduced cost, improved body, and gained Core damage reduction while active.
+
+### Why These Changes Were Made
+
+- Cores are always active, so their audit score now excludes Core HP and uses a smaller identity-effect target.
+- Repeatable mana was narrowed because banked mana makes even +1 per turn scale strongly over a match.
+- High-cost finishers received cost/stat/effect buffs so saving mana has a visible payoff.
+
+### New Top 10 Overpowered
+
+| Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
+| --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
+| Cog Blocker Deluxe | 2 | troop | machine | uncommon | 12 | 28.5 | 40.5 | 18-28 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
+| No Fun Allowed Core | 0 | core | arcane | rare | 0 | 12.8 | 12.8 | 0-12 | overpowered | increase mana cost; lower HP; reduce effect value |
+
+### New Top 10 Underpowered
+
+| Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
+| --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
+| Skip The Cutscene | 6 | spell | arcane | legendary | 0 | 20 | 20 | 70-90 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Bababooey Echo Chamber | 6 | enchantment | memeborn | legendary | 7.8 | 13.5 | 21.3 | 70-90 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Professor Stinky | 6 | troop | undead | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Rainbow Principal | 6 | troop | arcane | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Bababooey Herald | 6 | troop | memeborn | legendary | 24.3 | 0 | 24.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Grandpa Statue | 6 | troop | neutral | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Three Guys In A Coat | 6 | troop | beast | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Satellite Nephew | 6 | troop | tech | legendary | 26 | 0 | 26 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Wind-Up Lizard | 6 | troop | machine | legendary | 26.3 | 0 | 26.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Tax Refund Dragon | 8 | troop | mana | legendary | 26.2 | 42 | 68.2 | 110-135 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 
 ## Especially Broken Cards
 
 | Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
 | --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| Sell This Creature | 2 | spell | mana | uncommon | 0 | 50 | 50 | 18-28 | especially broken | increase mana cost; reduce effect value; increase cooldown |
-| Big Snack Core | 0 | core | mana | uncommon | 12 | 31.5 | 43.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
 | Cog Blocker Deluxe | 2 | troop | machine | uncommon | 12 | 28.5 | 40.5 | 18-28 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| No Fun Allowed Core | 0 | core | arcane | rare | 12 | 28.5 | 40.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
-| Quandale Dingle | 1 | troop | mana | common | 5.7 | 31.5 | 37.2 | 10-18 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| Bonk Alarm Core | 0 | core | beast | uncommon | 12 | 25 | 37 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
-| Bababooey Core Deluxe | 0 | core | memeborn | bababooey | 12 | 22.5 | 34.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
-| Forbidden Coupon | 0 | spell | memeborn | bababooey | 0 | 30 | 30 | 0-20 | especially broken | increase mana cost; reduce effect value; increase cooldown |
 
 ## Useless Cards
 
 | Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
 | --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| Forever Battery | 8 | enchantment | mana | mythic | 9 | 42 | 51 | 110-135 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Spreadsheet Trap | 6 | enchantment | arcane | legendary | 7.8 | 33 | 40.8 | 70-90 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Roomba With Charges | 6 | troop | tech | epic | 17.9 | 22.5 | 40.4 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Sit Down Button | 7 | spell | neutral | rare | 0 | 35 | 35 | 90-110 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Last Receipt | 6 | spell | undead | epic | 0 | 32 | 32 | 70-90 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Forbidden Blender | 8 | troop | machine | mythic | 29.8 | 0 | 29.8 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Oops Button 9000 | 8 | troop | tech | mythic | 29.5 | 0 | 29.5 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| The Big Bababooey | 9 | troop | memeborn | bababooey | 29.2 | 0 | 29.2 | 135-160 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Absolute Unit Event | 8 | troop | beast | mythic | 28.1 | 0 | 28.1 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| The Debt Collector | 8 | troop | neutral | mythic | 28.1 | 0 | 28.1 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Final Nap Box | 8 | troop | undead | mythic | 26.4 | 0 | 26.4 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Photoshop Wizard | 8 | troop | arcane | mythic | 26.4 | 0 | 26.4 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Wind-Up Lizard | 6 | troop | machine | legendary | 26.3 | 0 | 26.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Sky Laser Subscription | 5 | enchantment | tech | epic | 7.2 | 18.9 | 26.1 | 55-70 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Satellite Nephew | 6 | troop | tech | legendary | 26 | 0 | 26 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Big Tree Receipt | 8 | troop | mana | mythic | 25 | 0 | 25 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Grandpa Statue | 6 | troop | neutral | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Three Guys In A Coat | 6 | troop | beast | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Bababooey Herald | 6 | troop | memeborn | legendary | 24.3 | 0 | 24.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Professor Stinky | 6 | troop | undead | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Rainbow Principal | 6 | troop | arcane | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Factory Reset Panic | 5 | spell | machine | rare | 0 | 22.5 | 22.5 | 55-70 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Satellite Tap | 4 | spell | tech | rare | 0 | 22 | 22 | 40-55 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Loud Blender Noise | 4 | spell | beast | rare | 0 | 21.5 | 21.5 | 40-55 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Bababooey Echo Chamber | 6 | enchantment | memeborn | legendary | 7.8 | 13.5 | 21.3 | 70-90 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Big Clanky Frank | 5 | troop | machine | epic | 21.2 | 0 | 21.2 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Turbo Pajama Suit | 5 | troop | tech | epic | 20.9 | 0 | 20.9 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Satellite Tap | 4 | spell | tech | rare | 0 | 20 | 20 | 40-55 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Skip The Cutscene | 6 | spell | arcane | legendary | 0 | 20 | 20 | 70-90 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Big Tony Handler | 5 | troop | neutral | epic | 19.5 | 0 | 19.5 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Grandpa Woolly | 5 | troop | beast | epic | 19.5 | 0 | 19.5 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
@@ -129,41 +157,49 @@ Effect values are estimates. This audit is a triage tool, not an automatic balan
 
 ## Packs Affected
 
-- Archetype Pack: 110 flagged cards
-- Basic Pack: 110 flagged cards
-- Chaos Pack: 110 flagged cards
-- Epic Pack: 110 flagged cards
-- Mythic Pack: 110 flagged cards
-- Rare Pack: 110 flagged cards
-- Starter Pack: 110 flagged cards
-- Core Cache: 40 flagged cards
+- Archetype Pack: 94 flagged cards
+- Basic Pack: 94 flagged cards
+- Chaos Pack: 94 flagged cards
+- Epic Pack: 94 flagged cards
+- Mythic Pack: 94 flagged cards
+- Rare Pack: 94 flagged cards
+- Starter Pack: 94 flagged cards
+- Core Cache: 29 flagged cards
 
 ## Starter Archetypes Affected
 
-- aggro: 6 flagged cards
-- beast: 6 flagged cards
+- aggro: 5 flagged cards
+- beast: 5 flagged cards
 - control: 5 flagged cards
-- machine: 5 flagged cards
-- memeborn: 5 flagged cards
-- ramp: 5 flagged cards
-- undead: 5 flagged cards
+- machine: 4 flagged cards
+- memeborn: 4 flagged cards
+- undead: 3 flagged cards
+- ramp: 1 flagged cards
 
 ## Full Audit Table
 
 | Card | Cost | Type | Faction | Rarity | Stats | Effects | Total | Target | Status | Recommendations |
 | --- | ---: | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- |
+| Sit Down Button | 7 | spell | neutral | rare | 0 | 90 | 90 | 90-110 | balanced | no immediate change |
+| Forbidden Blender | 6 | troop | machine | mythic | 50 | 34.5 | 84.5 | 70-90 | balanced | no immediate change |
+| Big Tree Receipt | 6 | troop | mana | mythic | 45.2 | 31.5 | 76.7 | 70-90 | balanced | no immediate change |
+| Absolute Unit Event | 6 | troop | beast | mythic | 48 | 28.1 | 76.1 | 70-90 | balanced | no immediate change |
+| The Big Bababooey | 6 | troop | memeborn | bababooey | 51.2 | 24 | 75.2 | 70-90 | balanced | no immediate change |
+| The Debt Collector | 6 | troop | neutral | mythic | 50.8 | 22.5 | 73.3 | 70-90 | balanced | no immediate change |
+| Oops Button 9000 | 6 | troop | tech | mythic | 47.7 | 24 | 71.7 | 70-90 | balanced | no immediate change |
+| Photoshop Wizard | 6 | troop | arcane | mythic | 42.9 | 28 | 70.9 | 70-90 | balanced | no immediate change |
+| Final Nap Box | 6 | troop | undead | mythic | 46.1 | 24 | 70.1 | 70-90 | balanced | no immediate change |
 | Tax Refund Dragon | 8 | troop | mana | legendary | 26.2 | 42 | 68.2 | 110-135 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Nope Screen | 5 | enchantment | arcane | epic | 6 | 60 | 66 | 55-70 | balanced | no immediate change |
 | Very Serious Wall | 5 | enchantment | neutral | epic | 9.6 | 52.5 | 62.1 | 55-70 | balanced | no immediate change |
-| Forever Battery | 8 | enchantment | mana | mythic | 9 | 42 | 51 | 110-135 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Sell This Creature | 2 | spell | mana | uncommon | 0 | 50 | 50 | 18-28 | especially broken | increase mana cost; reduce effect value; increase cooldown |
+| Last Receipt | 6 | spell | undead | epic | 0 | 54 | 54 | 70-90 | underpowered | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
+| Sell This Creature | 4 | spell | mana | uncommon | 0 | 50 | 50 | 40-55 | balanced | no immediate change |
 | Tin Can Basement | 4 | enchantment | machine | rare | 9 | 40.5 | 49.5 | 40-55 | balanced | no immediate change |
 | ATM With Legs | 5 | troop | mana | rare | 15.4 | 31.5 | 46.9 | 55-70 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Bubble Wrap Palace | 4 | enchantment | arcane | rare | 7.2 | 37.5 | 44.7 | 40-55 | balanced | no immediate change |
-| Big Snack Core | 0 | core | mana | uncommon | 12 | 31.5 | 43.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
 | Spreadsheet Trap | 6 | enchantment | arcane | legendary | 7.8 | 33 | 40.8 | 70-90 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Cog Blocker Deluxe | 2 | troop | machine | uncommon | 12 | 28.5 | 40.5 | 18-28 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| No Fun Allowed Core | 0 | core | arcane | rare | 12 | 28.5 | 40.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
+| Forever Battery | 4 | enchantment | mana | mythic | 9 | 31.5 | 40.5 | 40-55 | balanced | no immediate change |
 | Roomba With Charges | 6 | troop | tech | epic | 17.9 | 22.5 | 40.4 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Museum Bouncer | 4 | troop | neutral | rare | 15.5 | 24 | 39.5 | 40-55 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Wizard Water Cooler | 3 | enchantment | arcane | rare | 6 | 33 | 39 | 28-40 | balanced | no immediate change |
@@ -171,61 +207,45 @@ Effect values are estimates. This audit is a triage tool, not an automatic balan
 | Rusty Juice Box | 3 | troop | machine | rare | 16.3 | 22.5 | 38.8 | 28-40 | balanced | no immediate change |
 | Judgy Statue | 4 | enchantment | neutral | rare | 8.4 | 30 | 38.4 | 40-55 | underpowered | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Coupon Warehouse | 3 | enchantment | tech | uncommon | 6 | 31.5 | 37.5 | 28-40 | balanced | no immediate change |
-| Quandale Dingle | 1 | troop | mana | common | 5.7 | 31.5 | 37.2 | 10-18 | especially broken | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| Bonk Alarm Core | 0 | core | beast | uncommon | 12 | 25 | 37 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
 | Shiny Rock Business | 3 | enchantment | mana | uncommon | 5.4 | 31.5 | 36.9 | 28-40 | balanced | no immediate change |
 | Cool Kids Den | 4 | enchantment | beast | rare | 7.2 | 29.4 | 36.6 | 40-55 | underpowered | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Leaky Mana Faucet | 2 | enchantment | mana | common | 4.8 | 31.5 | 36.3 | 18-28 | overpowered | increase mana cost; lower HP; reduce effect value; increase cooldown |
+| Leaky Mana Faucet | 3 | enchantment | mana | common | 4.2 | 31.5 | 35.7 | 28-40 | balanced | no immediate change |
 | Drama Ghost | 3 | troop | undead | rare | 12.9 | 22.5 | 35.4 | 28-40 | balanced | no immediate change |
-| Sit Down Button | 7 | spell | neutral | rare | 0 | 35 | 35 | 90-110 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Bababooey Core Deluxe | 0 | core | memeborn | bababooey | 12 | 22.5 | 34.5 | 0-20 | especially broken | increase mana cost; lower HP; reduce effect value |
 | Chrome Hall Monitor | 4 | troop | machine | rare | 17.2 | 16 | 33.2 | 40-55 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Last Receipt | 6 | spell | undead | epic | 0 | 32 | 32 | 70-90 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Folding Chair Steve | 3 | troop | memeborn | uncommon | 12.9 | 18.8 | 31.7 | 28-40 | balanced | no immediate change |
-| Forbidden Coupon | 0 | spell | memeborn | bababooey | 0 | 30 | 30 | 0-20 | especially broken | increase mana cost; reduce effect value; increase cooldown |
-| Liquidity Squish | 2 | troop | mana | common | 7.4 | 22.5 | 29.9 | 18-28 | overpowered | increase mana cost; lower HP; reduce effect value; increase cooldown |
-| Forbidden Blender | 8 | troop | machine | mythic | 29.8 | 0 | 29.8 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Oops Button 9000 | 8 | troop | tech | mythic | 29.5 | 0 | 29.5 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| The Big Bababooey | 9 | troop | memeborn | bababooey | 29.2 | 0 | 29.2 | 135-160 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Suspicious Wishing Well | 4 | enchantment | mana | rare | 6.6 | 22.5 | 29.1 | 40-55 | underpowered | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Absolute Unit Event | 8 | troop | beast | mythic | 28.1 | 0 | 28.1 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| The Debt Collector | 8 | troop | neutral | mythic | 28.1 | 0 | 28.1 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Nuh Uh | 3 | spell | arcane | epic | 0 | 28 | 28 | 28-40 | balanced | no immediate change |
 | Uno Reverse-ish | 4 | spell | arcane | epic | 0 | 28 | 28 | 40-55 | underpowered | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Contract Gobbler | 3 | troop | neutral | uncommon | 9.7 | 18.1 | 27.8 | 28-40 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Meme Factory | 2 | enchantment | memeborn | common | 4.8 | 22.5 | 27.3 | 18-28 | balanced | no immediate change |
-| The Nap Yard | 2 | enchantment | undead | common | 4.8 | 22.5 | 27.3 | 18-28 | balanced | no immediate change |
 | Alpha Lunch Monitor | 3 | troop | beast | uncommon | 13.2 | 14 | 27.2 | 28-40 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Final Nap Box | 8 | troop | undead | mythic | 26.4 | 0 | 26.4 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Photoshop Wizard | 8 | troop | arcane | mythic | 26.4 | 0 | 26.4 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Wind-Up Lizard | 6 | troop | machine | legendary | 26.3 | 0 | 26.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Sky Laser Subscription | 5 | enchantment | tech | epic | 7.2 | 18.9 | 26.1 | 55-70 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Satellite Nephew | 6 | troop | tech | legendary | 26 | 0 | 26 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Big Tree Receipt | 8 | troop | mana | mythic | 25 | 0 | 25 | 110-135 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Forbidden Coupon | 2 | spell | memeborn | bababooey | 0 | 25 | 25 | 18-28 | balanced | no immediate change |
 | Grandpa Statue | 6 | troop | neutral | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Three Guys In A Coat | 6 | troop | beast | legendary | 24.6 | 0 | 24.6 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Thunder Meatball | 3 | troop | beast | rare | 14.6 | 10 | 24.6 | 28-40 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Bababooey Herald | 6 | troop | memeborn | legendary | 24.3 | 0 | 24.3 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Magic Hall Monitor | 4 | troop | arcane | rare | 12.8 | 11.3 | 24.1 | 40-55 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Thunder Meatball | 3 | troop | beast | rare | 14.6 | 8.8 | 23.4 | 28-40 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Professor Stinky | 6 | troop | undead | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Rainbow Principal | 6 | troop | arcane | legendary | 22.9 | 0 | 22.9 | 70-90 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Bark Mode Core | 0 | core | beast | rare | 12 | 10.5 | 22.5 | 0-20 | overpowered | increase mana cost; lower HP |
 | Factory Reset Panic | 5 | spell | machine | rare | 0 | 22.5 | 22.5 | 55-70 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
-| Oops All Bones Core | 0 | core | undead | rare | 12 | 10.5 | 22.5 | 0-20 | overpowered | increase mana cost; lower HP |
-| Toaster Palace Core | 0 | core | machine | rare | 12 | 10.5 | 22.5 | 0-20 | overpowered | increase mana cost; lower HP |
+| Satellite Tap | 4 | spell | tech | rare | 0 | 22 | 22 | 40-55 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Loud Blender Noise | 4 | spell | beast | rare | 0 | 21.5 | 21.5 | 40-55 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Bababooey Echo Chamber | 6 | enchantment | memeborn | legendary | 7.8 | 13.5 | 21.3 | 70-90 | useless | increase HP or effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Big Clanky Frank | 5 | troop | machine | epic | 21.2 | 0 | 21.2 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Turbo Pajama Suit | 5 | troop | tech | epic | 20.9 | 0 | 20.9 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Satellite Tap | 4 | spell | tech | rare | 0 | 20 | 20 | 40-55 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Skip The Cutscene | 6 | spell | arcane | legendary | 0 | 20 | 20 | 70-90 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Totally Legal Plan | 3 | spell | memeborn | rare | 0 | 20 | 20 | 28-40 | underpowered | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
+| The Nap Yard | 2 | enchantment | undead | common | 4.8 | 15 | 19.8 | 18-28 | balanced | no immediate change |
 | Big Tony Handler | 5 | troop | neutral | epic | 19.5 | 0 | 19.5 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Grandpa Woolly | 5 | troop | beast | epic | 19.5 | 0 | 19.5 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Liquidity Squish | 2 | troop | mana | common | 4.3 | 15 | 19.3 | 18-28 | balanced | no immediate change |
 | Monday Morning | 5 | troop | memeborn | epic | 19.2 | 0 | 19.2 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Toe Nibbler | 1 | troop | undead | common | 5.2 | 13.5 | 18.7 | 10-18 | overpowered | increase mana cost; lower HP; reduce effect value; increase cooldown |
 | Big Dirt Guy | 5 | troop | undead | epic | 17.8 | 0 | 17.8 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Microwave Prophet | 5 | troop | arcane | epic | 17.8 | 0 | 17.8 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Quandale Dingle | 1 | troop | mana | common | 2.6 | 15 | 17.6 | 10-18 | balanced | no immediate change |
 | Bone Confetti | 3 | spell | undead | uncommon | 0 | 17 | 17 | 28-40 | underpowered | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | IKEA Siege Expert | 4 | troop | tech | rare | 16.9 | 0 | 16.9 | 40-55 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Lawn Violation Titan | 5 | troop | mana | epic | 16.4 | 0 | 16.4 | 55-70 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
@@ -246,6 +266,7 @@ Effect values are estimates. This audit is a triage tool, not an automatic balan
 | Uncle Parry | 3 | troop | neutral | rare | 14.6 | 0 | 14.6 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Scrap Yard Sneezing | 3 | spell | tech | uncommon | 0 | 14.5 | 14.5 | 28-40 | useless | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Caps Lock Captain | 3 | troop | memeborn | rare | 14.3 | 0 | 14.3 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Toe Nibbler | 1 | troop | undead | common | 5.2 | 9 | 14.2 | 10-18 | balanced | no immediate change |
 | Group Chat Howl | 2 | spell | beast | uncommon | 0 | 14 | 14 | 18-28 | underpowered | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
 | Overclock The Toaster | 1 | spell | machine | common | 0 | 14 | 14 | 10-18 | balanced | no immediate change |
 | Cosmic Zip Tie | 4 | troop | arcane | rare | 13.8 | 0 | 13.8 | 40-55 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
@@ -254,14 +275,16 @@ Effect values are estimates. This audit is a triage tool, not an automatic balan
 | Gear Gremlin Guy | 2 | troop | tech | common | 13.4 | 0 | 13.4 | 18-28 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Parking Lot Larry | 3 | troop | neutral | uncommon | 13.2 | 0 | 13.2 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Ctrl Z Security | 3 | troop | arcane | rare | 12.9 | 0 | 12.9 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| No Fun Allowed Core | 0 | core | arcane | rare | 0 | 12.8 | 12.8 | 0-12 | overpowered | increase mana cost; lower HP; reduce effect value |
 | Extension Cord Giant | 4 | troop | mana | rare | 12.4 | 0 | 12.4 | 40-55 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Flag Boy Supreme | 2 | troop | neutral | common | 12 | 0 | 12 | 18-28 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
-| Plain Toast Core | 0 | core | neutral | common | 12 | 0 | 12 | 0-20 | balanced | no immediate change |
 | Wet Chicken Raptor | 2 | troop | beast | common | 12 | 0 | 12 | 18-28 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Shopping Cart Rhino | 2 | troop | beast | uncommon | 11.7 | 0 | 11.7 | 18-28 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Coffin Bouncer | 3 | troop | undead | uncommon | 11.5 | 0 | 11.5 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Crystal Dad | 3 | troop | mana | rare | 11.5 | 0 | 11.5 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Selfie Sorcerer | 3 | troop | arcane | uncommon | 11.5 | 0 | 11.5 | 28-40 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Bark Mode Core | 0 | core | beast | rare | 0 | 11.3 | 11.3 | 0-12 | balanced | no immediate change |
+| Bonk Alarm Core | 0 | core | beast | uncommon | 0 | 11.3 | 11.3 | 0-12 | balanced | no immediate change |
 | Bluetooth Bonker | 2 | troop | tech | uncommon | 10.6 | 0 | 10.6 | 18-28 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Skeleton With WiFi | 2 | troop | undead | common | 10.3 | 0 | 10.3 | 18-28 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Tiny Slap | 1 | spell | beast | common | 0 | 9 | 9 | 10-18 | underpowered | increase effect value; lower cooldown; lower mana cost if identity should stay weak |
@@ -280,8 +303,13 @@ Effect values are estimates. This audit is a triage tool, not an automatic balan
 | Bitey Chihuahua | 1 | troop | beast | common | 6.6 | 0 | 6.6 | 10-18 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Bonk Intern | 1 | troop | memeborn | common | 6.6 | 0 | 6.6 | 10-18 | underpowered | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Budget Yoga Wizard | 2 | troop | mana | uncommon | 6.1 | 0 | 6.1 | 18-28 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Bababooey Core Deluxe | 0 | core | memeborn | bababooey | 0 | 5.4 | 5.4 | 0-12 | balanced | no immediate change |
 | Sneaky Cheddar Cub | 1 | troop | beast | common | 5.4 | 0 | 5.4 | 10-18 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Lil Goobert | 1 | troop | memeborn | common | 5.2 | 0 | 5.2 | 10-18 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Tiny Rune Snitch | 1 | troop | arcane | common | 5.2 | 0 | 5.2 | 10-18 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Toaster Palace Core | 0 | core | machine | rare | 0 | 4.7 | 4.7 | 0-12 | balanced | no immediate change |
 | Bone Roomba | 1 | troop | undead | common | 3.8 | 0 | 3.8 | 10-18 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
 | Spelling Bee Menace | 1 | troop | arcane | common | 3.8 | 0 | 3.8 | 10-18 | useless | increase attack or HP; lower cooldown; lower mana cost if identity should stay weak |
+| Oops All Bones Core | 0 | core | undead | rare | 0 | 3.2 | 3.2 | 0-12 | balanced | no immediate change |
+| Big Snack Core | 0 | core | mana | uncommon | 0 | 0 | 0 | 0-12 | balanced | no immediate change |
+| Plain Toast Core | 0 | core | neutral | common | 0 | 0 | 0 | 0-12 | balanced | no immediate change |
