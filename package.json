@@ -6,6 +6,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
+    "balance:audit": "node scripts/balanceAudit.js",
     "db:migrate": "node scripts/migratePostgres.js",
     "reset:all": "node scripts/resetStore.js all",
     "reset:user": "node scripts/resetStore.js user",
