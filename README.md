@@ -1,5 +1,7 @@
 # Bababooey Arena
 
+> **Status: No longer active.** Bababooey Arena ran during **summer 2026** and is no longer hosted or running. This repository preserves the project’s source code for reference.
+
 Bababooey Arena is a local and online card battler built on a deterministic server-authoritative battle engine.
 
 ## New Player Progression
@@ -33,6 +35,8 @@ Quests provide extra coin income. One-time quests give larger early boosts for f
 Ranked matches pay more than casual matches to reward the higher-stakes queue: casual wins/losses grant 50/10 coins, while ranked wins/losses grant 150/40 coins. The repeatable ranked session quest also pays more than the casual session quest.
 
 ## Run Locally
+
+The original game is no longer active. The local setup and deployment instructions below are for running your own copy.
 
 Install dependencies, then start the server:
 
